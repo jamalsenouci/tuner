@@ -279,13 +279,27 @@
       display: flex;
     }
 
+    .strobe-hint {
+      display: none;
+      font-size: 11px;
+      font-weight: 300;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 0.05em;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .meter.strobe-mode ~ .strobe-hint {
+      display: block;
+    }
+
     /* Needle */
     .needle-container {
       position: absolute;
       bottom: 0;
       left: 50%;
       transform-origin: bottom center;
-      transition: transform 0.25s ease-out;
     }
 
     .needle {
@@ -1563,6 +1577,19 @@
     let pingEnabled = localStorage.getItem('pingEnabled') !== 'false'; // default on
     const PING_COOLDOWN = 800; // ms between pings
 
+    // Haptic feedback
+    function triggerHaptic() {
+      try {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics) {
+          window.Capacitor.Plugins.Haptics.impact({ style: 'MEDIUM' });
+          return;
+        }
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      } catch (e) { /* ignore */ }
+    }
+
     function playInTunePing() {
       if (!audioContext || !pingEnabled) return;
 
@@ -1603,6 +1630,9 @@
         if (!lastNoSignal) {
           tunerContainer.classList.add('no-signal');
           lastNoSignal = true;
+          // Clear auto-detect highlighting
+          document.querySelectorAll('.string-btn').forEach(btn => btn.classList.remove('auto-detected'));
+          lastClosestIdx = -1;
         }
         return;
       }
@@ -1662,17 +1692,16 @@
           closestIdx = i;
         }
       });
-      if (closestIdx !== lastClosestIdx) {
-        document.querySelectorAll('.string-btn').forEach((btn, i) => {
-          btn.classList.toggle('auto-detected', i === closestIdx && closestDist < 2);
-        });
-        lastClosestIdx = closestIdx;
-      }
+      document.querySelectorAll('.string-btn').forEach((btn, i) => {
+        btn.classList.toggle('auto-detected', i === closestIdx && closestDist < 2);
+      });
+      lastClosestIdx = closestIdx;
 
       // Play ping when transitioning to in-tune
       const isInTune = Math.abs(cents) <= 5;
       if (isInTune && !wasInTune) {
         playInTunePing();
+        triggerHaptic();
       }
       wasInTune = isInTune;
     }
