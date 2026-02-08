@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Tuner</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+
+    :root {
+      --bg-deep: #0a0a0a;
+      --bg-surface: #141414;
+      --amber: #d4a853;
+      --amber-glow: rgba(212, 168, 83, 0.4);
+      --amber-dim: rgba(212, 168, 83, 0.15);
+      --text-primary: #e8e4dc;
+      --text-muted: rgba(232, 228, 220, 0.4);
+
+      /* Tuning accuracy colors */
+      --tune-color: #d4a853;
+      --tune-glow: rgba(212, 168, 83, 0.4);
+
+      --color-perfect: #4ade80;
+      --color-close: #a3e635;
+      --color-medium: #facc15;
+      --color-far: #f97316;
+      --color-very-far: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) 24px calc(env(safe-area-inset-bottom) + 24px);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Subtle grain texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .header {
+      text-align: center;
+      padding-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-family: 'Instrument Serif', serif;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .sound-toggle {
+      position: absolute;
+      right: 24px;
+      top: calc(env(safe-area-inset-top) + 20px);
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--bg-surface);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(232, 228, 220, 0.1);
+    }
+
+    .sound-toggle:active {
+      transform: scale(0.92);
+    }
+
+    .sound-toggle svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--text-muted);
+      transition: fill 0.2s ease;
+    }
+
+    .sound-toggle.enabled svg {
+      fill: var(--amber);
+    }
+
+    .sound-toggle.enabled {
+      border-color: rgba(212, 168, 83, 0.3);
+    }
+
+    .tuner-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .note-display {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .current-note {
+      font-family: 'Instrument Serif', serif;
+      font-size: 120px;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--tune-color);
+      transition: color 0.2s ease, text-shadow 0.2s ease;
+      text-shadow: 0 0 40px var(--tune-glow);
+    }
+
+    .current-octave {
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--text-muted);
+      vertical-align: super;
+      margin-left: 4px;
+    }
+
+    .frequency {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      margin-top: 12px;
+    }
+
+    /* Meter */
+    .meter {
+      position: relative;
+      width: 100%;
+      height: 140px;
+      margin-bottom: 48px;
+    }
+
+    .meter-arc {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .meter-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .meter-track {
+      fill: none;
+      stroke: var(--bg-surface);
+      stroke-width: 2;
+    }
+
+    .meter-ticks line {
+      stroke: var(--text-muted);
+      stroke-width: 1;
+    }
+
+    .meter-ticks .center-tick {
+      stroke: var(--amber);
+      stroke-width: 2;
+    }
+
+    .meter-labels text {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      fill: var(--text-muted);
+    }
+
+    .meter-labels .center-label {
+      fill: var(--amber);
+    }
+
+    /* Needle */
+    .needle-container {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform-origin: bottom center;
+      transition: transform 0.25s ease-out;
+    }
+
+    .needle {
+      width: 2px;
+      height: 110px;
+      background: linear-gradient(to top, var(--tune-color), var(--tune-color) 80%, transparent);
+      border-radius: 1px;
+      transform: translateX(-50%);
+      box-shadow: 0 0 12px var(--tune-glow);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .needle-tip {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      background: var(--tune-color);
+      border-radius: 50%;
+      box-shadow: 0 0 20px var(--tune-glow);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .needle-base {
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 16px;
+      background: var(--bg-surface);
+      border: 2px solid var(--tune-glow);
+      border-radius: 50%;
+      transition: border-color 0.2s ease;
+    }
+
+    /* Cents display */
+    .cents-display {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .cents-value {
+      color: var(--tune-color);
+      transition: color 0.2s ease;
+    }
+
+    /* String buttons */
+    .strings-container {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .tuning-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 20px;
+      transition: background 0.2s ease;
+    }
+
+    .tuning-selector:active {
+      background: rgba(232, 228, 220, 0.05);
+    }
+
+    .tuning-name {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .tuning-arrow {
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+
+    .tuning-selector.open .tuning-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* Tuning modal */
+    .tuning-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .tuning-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .tuning-modal-content {
+      width: 100%;
+      max-width: 400px;
+      max-height: 70vh;
+      background: var(--bg-surface);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 0 calc(env(safe-area-inset-bottom) + 24px);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+      overflow-y: auto;
+    }
+
+    .tuning-modal.open .tuning-modal-content {
+      transform: translateY(0);
+    }
+
+    .tuning-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px 16px;
+      border-bottom: 1px solid rgba(232, 228, 220, 0.06);
+    }
+
+    .tuning-modal-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 18px;
+      color: var(--text-primary);
+    }
+
+    .tuning-modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: rgba(232, 228, 220, 0.1);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 18px;
+    }
+
+    .tuning-category {
+      padding: 16px 24px 8px;
+    }
+
+    .tuning-category-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .tuning-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+
+    .tuning-option:active {
+      background: rgba(212, 168, 83, 0.1);
+    }
+
+    .tuning-option.active {
+      background: rgba(212, 168, 83, 0.08);
+    }
+
+    .tuning-option-name {
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+
+    .tuning-option.active .tuning-option-name {
+      color: var(--amber);
+    }
+
+    .tuning-option-notes {
+      font-size: 12px;
+      font-weight: 300;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .strings {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .string-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 8px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.06);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .string-btn:active {
+      transform: scale(0.96);
+      background: rgba(212, 168, 83, 0.1);
+    }
+
+    .string-btn.active {
+      border-color: var(--amber);
+      background: rgba(212, 168, 83, 0.08);
+    }
+
+    .string-btn.auto-detected {
+      border-color: var(--tune-color);
+      background: rgba(212, 168, 83, 0.06);
+    }
+
+    .string-btn.auto-detected .string-note {
+      color: var(--tune-color);
+      transition: color 0.2s ease;
+    }
+
+    .string-note {
+      font-family: 'Instrument Serif', serif;
+      font-size: 24px;
+      color: var(--text-primary);
+    }
+
+    .string-number {
+      font-size: 10px;
+      font-weight: 300;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Start button */
+    .start-container {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-deep);
+      z-index: 50;
+      transition: opacity 0.4s ease;
+    }
+
+    .start-container.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .start-btn {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid rgba(212, 168, 83, 0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 0 0 var(--amber-dim);
+    }
+
+    .start-btn:active {
+      transform: scale(0.95);
+    }
+
+    .start-btn:hover {
+      border-color: var(--amber);
+      box-shadow: 0 0 40px var(--amber-dim);
+    }
+
+    .start-icon {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--amber);
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .start-icon::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      background: var(--amber);
+      border-radius: 50%;
+    }
+
+    .start-text {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 24px;
+    }
+
+    /* Listening animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    .listening .start-icon {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* No signal state */
+    .no-signal .current-note {
+      color: var(--text-muted);
+    }
+
+    .no-signal .needle-container {
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="start-container" id="startContainer">
+    <button class="start-btn" id="startBtn">
+      <div class="start-icon"></div>
+    </button>
+    <p class="start-text">Tap to tune</p>
+  </div>
+
+  <header class="header">
+    <h1 class="logo">Tuner</h1>
+  </header>
+
+  <button class="sound-toggle enabled" id="soundToggle" title="Toggle ping sound">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+    </svg>
+  </button>
+
+  <main class="tuner-container" id="tunerContainer">
+    <div class="note-display">
+      <span class="current-note" id="currentNote">—</span>
+      <span class="current-octave" id="currentOctave"></span>
+      <p class="frequency" id="frequency">— Hz</p>
+    </div>
+
+    <div class="meter" id="meter">
+      <svg class="meter-svg" viewBox="0 0 300 140">
+        <!-- Arc track -->
+        <path class="meter-track" d="M 30 130 A 120 120 0 0 1 270 130" />
+
+        <!-- Tick marks -->
+        <g class="meter-ticks">
+          <line x1="30" y1="130" x2="40" y2="122" />
+          <line x1="60" y1="95" x2="68" y2="102" />
+          <line x1="100" y1="70" x2="105" y2="79" />
+          <line x1="150" y1="55" x2="150" y2="66" class="center-tick" />
+          <line x1="200" y1="70" x2="195" y2="79" />
+          <line x1="240" y1="95" x2="232" y2="102" />
+          <line x1="270" y1="130" x2="260" y2="122" />
+        </g>
+
+        <!-- Labels -->
+        <g class="meter-labels">
+          <text x="22" y="138" text-anchor="start">♭</text>
+          <text x="150" y="48" text-anchor="middle" class="center-label">●</text>
+          <text x="278" y="138" text-anchor="end">♯</text>
+        </g>
+      </svg>
+
+      <div class="needle-container" id="needle">
+        <div class="needle"></div>
+        <div class="needle-tip"></div>
+        <div class="needle-base"></div>
+      </div>
+    </div>
+
+    <div class="cents-display">
+      <span class="cents-value" id="centsValue">0</span> cents
+    </div>
+  </main>
+
+  <!-- Tuning Modal -->
+  <div class="tuning-modal" id="tuningModal">
+    <div class="tuning-modal-content">
+      <div class="tuning-modal-header">
+        <h2 class="tuning-modal-title">Select Tuning</h2>
+        <button class="tuning-modal-close" id="closeTuningModal">&times;</button>
+      </div>
+      <div id="tuningList"></div>
+    </div>
+  </div>
+
+  <nav class="strings-container">
+    <div class="tuning-selector" id="tuningSelector">
+      <span class="tuning-name" id="currentTuningName">Standard</span>
+      <span class="tuning-arrow"></span>
+    </div>
+    <div class="strings" id="strings"></div>
+  </nav>
+
+  <script>
+    // Audio context and analyser
+    let audioContext;
+    let analyser;
+    let mediaStream;
+    let isListening = false;
+
+    // Note frequencies (A4 = 440Hz)
+    const A4 = 440;
+    const NOTES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+
+    // All tunings organized by category
+    const TUNINGS = {
+      'Standard': [
+        { name: 'Standard', notes: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], freqs: [82.41, 110.00, 146.83, 196.00, 246.94, 329.63] },
+        { name: 'Half Step Down', notes: ['E♭2', 'A♭2', 'D♭3', 'G♭3', 'B♭3', 'E♭4'], freqs: [77.78, 103.83, 138.59, 185.00, 233.08, 311.13] },
+        { name: 'Full Step Down', notes: ['D2', 'G2', 'C3', 'F3', 'A3', 'D4'], freqs: [73.42, 98.00, 130.81, 174.61, 220.00, 293.66] },
+      ],
+      'Drop': [
+        { name: 'Drop D', notes: ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'], freqs: [73.42, 110.00, 146.83, 196.00, 246.94, 329.63] },
+        { name: 'Drop C', notes: ['C2', 'G2', 'C3', 'F3', 'A3', 'D4'], freqs: [65.41, 98.00, 130.81, 174.61, 220.00, 293.66] },
+        { name: 'Drop B', notes: ['B1', 'F♯2', 'B2', 'E3', 'G♯3', 'C♯4'], freqs: [61.74, 92.50, 123.47, 164.81, 207.65, 277.18] },
+        { name: 'Drop A', notes: ['A1', 'E2', 'A2', 'D3', 'F♯3', 'B3'], freqs: [55.00, 82.41, 110.00, 146.83, 185.00, 246.94] },
+      ],
+      'Open': [
+        { name: 'Open G', notes: ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'], freqs: [73.42, 98.00, 146.83, 196.00, 246.94, 293.66] },
+        { name: 'Open D', notes: ['D2', 'A2', 'D3', 'F♯3', 'A3', 'D4'], freqs: [73.42, 110.00, 146.83, 185.00, 220.00, 293.66] },
+        { name: 'Open E', notes: ['E2', 'B2', 'E3', 'G♯3', 'B3', 'E4'], freqs: [82.41, 123.47, 164.81, 207.65, 246.94, 329.63] },
+        { name: 'Open A', notes: ['E2', 'A2', 'E3', 'A3', 'C♯4', 'E4'], freqs: [82.41, 110.00, 164.81, 220.00, 277.18, 329.63] },
+        { name: 'Open C', notes: ['C2', 'G2', 'C3', 'G3', 'C4', 'E4'], freqs: [65.41, 98.00, 130.81, 196.00, 261.63, 329.63] },
+      ],
+      'Alternate': [
+        { name: 'DADGAD', notes: ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'], freqs: [73.42, 110.00, 146.83, 196.00, 220.00, 293.66] },
+        { name: 'Double Drop D', notes: ['D2', 'A2', 'D3', 'G3', 'B3', 'D4'], freqs: [73.42, 110.00, 146.83, 196.00, 246.94, 293.66] },
+        { name: 'C6', notes: ['C2', 'A2', 'C3', 'G3', 'C4', 'E4'], freqs: [65.41, 110.00, 130.81, 196.00, 261.63, 329.63] },
+        { name: 'All Fourths', notes: ['E2', 'A2', 'D3', 'G3', 'C4', 'F4'], freqs: [82.41, 110.00, 146.83, 196.00, 261.63, 349.23] },
+        { name: 'NST (Fripp)', notes: ['C2', 'G2', 'D3', 'A3', 'E4', 'G4'], freqs: [65.41, 98.00, 146.83, 220.00, 329.63, 392.00] },
+      ]
+    };
+
+    let currentTuning = TUNINGS['Standard'][0];
+
+    // DOM elements
+    const startContainer = document.getElementById('startContainer');
+    const startBtn = document.getElementById('startBtn');
+    const tunerContainer = document.getElementById('tunerContainer');
+    const currentNoteEl = document.getElementById('currentNote');
+    const currentOctaveEl = document.getElementById('currentOctave');
+    const frequencyEl = document.getElementById('frequency');
+    const needleEl = document.getElementById('needle');
+    const meterEl = document.getElementById('meter');
+    const centsValueEl = document.getElementById('centsValue');
+    const stringsEl = document.getElementById('strings');
+    const tuningSelector = document.getElementById('tuningSelector');
+    const tuningModal = document.getElementById('tuningModal');
+    const closeTuningModal = document.getElementById('closeTuningModal');
+    const tuningList = document.getElementById('tuningList');
+    const currentTuningName = document.getElementById('currentTuningName');
+
+    // Render string buttons for current tuning
+    function renderStrings() {
+      stringsEl.innerHTML = currentTuning.notes.map((note, i) => {
+        const displayNote = note.replace(/[0-9]/g, '');
+        return `
+          <button class="string-btn" data-freq="${currentTuning.freqs[i]}">
+            <span class="string-note">${displayNote}</span>
+            <span class="string-number">${6 - i}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // Render tuning modal list
+    function renderTuningList() {
+      tuningList.innerHTML = Object.entries(TUNINGS).map(([category, tunings]) => `
+        <div class="tuning-category">
+          <span class="tuning-category-label">${category}</span>
+        </div>
+        ${tunings.map(tuning => `
+          <button class="tuning-option ${tuning.name === currentTuning.name ? 'active' : ''}" data-tuning="${tuning.name}">
+            <span class="tuning-option-name">${tuning.name}</span>
+            <span class="tuning-option-notes">${tuning.notes.map(n => n.replace(/[0-9]/g, '')).join(' ')}</span>
+          </button>
+        `).join('')}
+      `).join('');
+    }
+
+    // Select a tuning
+    function selectTuning(tuningName) {
+      for (const category of Object.values(TUNINGS)) {
+        const found = category.find(t => t.name === tuningName);
+        if (found) {
+          currentTuning = found;
+          break;
+        }
+      }
+      currentTuningName.textContent = currentTuning.name;
+      renderStrings();
+      renderTuningList();
+      closeTuningModalFn();
+
+      // Save preference
+      localStorage.setItem('selectedTuning', currentTuning.name);
+    }
+
+    // Open/close modal
+    function openTuningModal() {
+      tuningModal.classList.add('open');
+      tuningSelector.classList.add('open');
+    }
+
+    function closeTuningModalFn() {
+      tuningModal.classList.remove('open');
+      tuningSelector.classList.remove('open');
+    }
+
+    // Convert frequency to note
+    function frequencyToNote(freq) {
+      const noteNum = 12 * (Math.log2(freq / A4));
+      const noteIndex = Math.round(noteNum) + 69; // MIDI note number
+      const cents = Math.round((noteNum - Math.round(noteNum)) * 100);
+      const octave = Math.floor(noteIndex / 12) - 1;
+      const note = NOTES[noteIndex % 12];
+
+      return { note, octave, cents, noteIndex };
+    }
+
+    // Frequency smoothing - much more aggressive
+    const frequencyHistory = [];
+    const HISTORY_SIZE = 12;
+    let lastValidFrequency = -1;
+    let smoothedFrequency = -1;
+    let displayedCents = 0;
+    let stableCount = 0;
+    const EMA_ALPHA = 0.15; // Exponential moving average factor (lower = smoother)
+
+    // YIN pitch detection algorithm (more accurate than simple autocorrelation)
+    function yinPitchDetect(buffer, sampleRate) {
+      const SIZE = buffer.length;
+      const yinBufferSize = Math.floor(SIZE / 2);
+      const yinBuffer = new Float32Array(yinBufferSize);
+      const threshold = 0.15;
+
+      // Find RMS for signal detection
+      let rms = 0;
+      for (let i = 0; i < SIZE; i++) {
+        rms += buffer[i] * buffer[i];
+      }
+      rms = Math.sqrt(rms / SIZE);
+
+      // Not enough signal
+      if (rms < 0.02) return { frequency: -1, confidence: 0 };
+
+      // Step 1: Compute the difference function
+      let runningSum = 0;
+      yinBuffer[0] = 1;
+
+      for (let tau = 1; tau < yinBufferSize; tau++) {
+        yinBuffer[tau] = 0;
+        for (let i = 0; i < yinBufferSize; i++) {
+          const delta = buffer[i] - buffer[i + tau];
+          yinBuffer[tau] += delta * delta;
+        }
+        runningSum += yinBuffer[tau];
+        // Cumulative mean normalized difference
+        yinBuffer[tau] *= tau / runningSum;
+      }
+
+      // Step 2: Find the first dip below threshold
+      let tauEstimate = -1;
+      for (let tau = 2; tau < yinBufferSize; tau++) {
+        if (yinBuffer[tau] < threshold) {
+          while (tau + 1 < yinBufferSize && yinBuffer[tau + 1] < yinBuffer[tau]) {
+            tau++;
+          }
+          tauEstimate = tau;
+          break;
+        }
+      }
+
+      if (tauEstimate === -1) return { frequency: -1, confidence: 0 };
+
+      // Step 3: Parabolic interpolation for better precision
+      let betterTau;
+      const x0 = tauEstimate < 1 ? tauEstimate : tauEstimate - 1;
+      const x2 = tauEstimate + 1 < yinBufferSize ? tauEstimate + 1 : tauEstimate;
+
+      if (x0 === tauEstimate) {
+        betterTau = yinBuffer[tauEstimate] <= yinBuffer[x2] ? tauEstimate : x2;
+      } else if (x2 === tauEstimate) {
+        betterTau = yinBuffer[tauEstimate] <= yinBuffer[x0] ? tauEstimate : x0;
+      } else {
+        const s0 = yinBuffer[x0];
+        const s1 = yinBuffer[tauEstimate];
+        const s2 = yinBuffer[x2];
+        betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+      }
+
+      const frequency = sampleRate / betterTau;
+      const confidence = 1 - yinBuffer[tauEstimate];
+
+      return { frequency, confidence };
+    }
+
+    // Smooth frequency readings with aggressive filtering
+    function smoothFrequency(newFreq) {
+      if (newFreq === -1) {
+        stableCount = Math.max(0, stableCount - 1);
+        if (stableCount === 0) {
+          frequencyHistory.length = 0;
+        }
+        return smoothedFrequency > 0 ? smoothedFrequency : -1;
+      }
+
+      // Check if new frequency is close to recent readings
+      if (lastValidFrequency > 0) {
+        const ratio = newFreq / lastValidFrequency;
+        // If jumping more than a semitone, it's probably a different note or noise
+        if (ratio < 0.94 || ratio > 1.06) {
+          // Reset for new note
+          frequencyHistory.length = 0;
+          stableCount = 0;
+          smoothedFrequency = -1;
+        }
+      }
+
+      frequencyHistory.push(newFreq);
+      if (frequencyHistory.length > HISTORY_SIZE) {
+        frequencyHistory.shift();
+      }
+
+      // Need at least 4 readings before showing anything
+      if (frequencyHistory.length < 4) return -1;
+
+      // Filter out outliers using median
+      const sorted = [...frequencyHistory].sort((a, b) => a - b);
+      const median = sorted[Math.floor(sorted.length / 2)];
+
+      // Only keep values within 3% of median (tighter filter)
+      const filtered = frequencyHistory.filter(f => {
+        const ratio = f / median;
+        return ratio > 0.97 && ratio < 1.03;
+      });
+
+      // Need at least 3 consistent readings
+      if (filtered.length < 3) return smoothedFrequency > 0 ? smoothedFrequency : -1;
+
+      const avg = filtered.reduce((a, b) => a + b, 0) / filtered.length;
+
+      // Apply exponential moving average for smooth transitions
+      if (smoothedFrequency < 0) {
+        smoothedFrequency = avg;
+      } else {
+        smoothedFrequency = EMA_ALPHA * avg + (1 - EMA_ALPHA) * smoothedFrequency;
+      }
+
+      lastValidFrequency = smoothedFrequency;
+      stableCount = Math.min(stableCount + 1, 20);
+
+      return smoothedFrequency;
+    }
+
+    // Smooth cents display to prevent jitter
+    function smoothCents(rawCents) {
+      const diff = rawCents - displayedCents;
+      // Only update if change is significant (> 1 cent) or we're close to target
+      if (Math.abs(diff) > 1) {
+        // Move towards target, but smoothly
+        displayedCents += diff * 0.3;
+      }
+      return Math.round(displayedCents);
+    }
+
+    // Get color based on how many cents off
+    function getTuneColor(cents) {
+      const absCents = Math.abs(cents);
+
+      if (absCents <= 5) {
+        // Perfect - bright green
+        return { color: '#4ade80', glow: 'rgba(74, 222, 128, 0.5)' };
+      } else if (absCents <= 10) {
+        // Very close - green-yellow
+        return { color: '#a3e635', glow: 'rgba(163, 230, 53, 0.4)' };
+      } else if (absCents <= 20) {
+        // Close - yellow
+        return { color: '#facc15', glow: 'rgba(250, 204, 21, 0.4)' };
+      } else if (absCents <= 35) {
+        // Medium - orange
+        return { color: '#f97316', glow: 'rgba(249, 115, 22, 0.4)' };
+      } else {
+        // Far - red
+        return { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.4)' };
+      }
+    }
+
+    // In-tune ping sound
+    let wasInTune = false;
+    let lastPingTime = 0;
+    let pingEnabled = localStorage.getItem('pingEnabled') !== 'false'; // default on
+    const PING_COOLDOWN = 800; // ms between pings
+
+    function playInTunePing() {
+      if (!audioContext || !pingEnabled) return;
+
+      const now = Date.now();
+      if (now - lastPingTime < PING_COOLDOWN) return;
+      lastPingTime = now;
+
+      // Create a pleasant "ding" sound
+      const osc1 = audioContext.createOscillator();
+      const osc2 = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      // Two oscillators for a richer tone
+      osc1.type = 'sine';
+      osc1.frequency.value = 880; // A5
+
+      osc2.type = 'sine';
+      osc2.frequency.value = 1320; // E6 (perfect fifth above)
+
+      // Quick attack, gentle decay
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
+
+      osc1.connect(gainNode);
+      osc2.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      osc1.start();
+      osc2.start();
+      osc1.stop(audioContext.currentTime + 0.4);
+      osc2.stop(audioContext.currentTime + 0.4);
+    }
+
+    // Update display
+    function updateDisplay(frequency) {
+      if (frequency === -1 || frequency < 60 || frequency > 1000) {
+        tunerContainer.classList.add('no-signal');
+        return;
+      }
+
+      tunerContainer.classList.remove('no-signal');
+
+      const { note, octave, cents: rawCents } = frequencyToNote(frequency);
+
+      // Apply smoothing to cents for stable display
+      const cents = smoothCents(rawCents);
+
+      currentNoteEl.textContent = note;
+      currentOctaveEl.textContent = octave;
+      frequencyEl.textContent = `${frequency.toFixed(1)} Hz`;
+
+      // Update cents
+      const centsPrefix = cents > 0 ? '+' : '';
+      centsValueEl.textContent = `${centsPrefix}${cents}`;
+
+      // Update needle (map cents to angle, -50 to +50 cents = -45 to +45 degrees)
+      const angle = (cents / 50) * 45;
+      const clampedAngle = Math.max(-45, Math.min(45, angle));
+      needleEl.style.transform = `translateX(-50%) rotate(${clampedAngle}deg)`;
+
+      // Update colors based on accuracy
+      const { color, glow } = getTuneColor(cents);
+      document.documentElement.style.setProperty('--tune-color', color);
+      document.documentElement.style.setProperty('--tune-glow', glow);
+
+      // Auto-detect closest string
+      let closestIdx = 0;
+      let closestDist = Infinity;
+      currentTuning.freqs.forEach((f, i) => {
+        const dist = Math.abs(12 * Math.log2(frequency / f));
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestIdx = i;
+        }
+      });
+      document.querySelectorAll('.string-btn').forEach((btn, i) => {
+        btn.classList.toggle('auto-detected', i === closestIdx && closestDist < 2);
+      });
+
+      // Play ping when transitioning to in-tune
+      const isInTune = Math.abs(cents) <= 5;
+      if (isInTune && !wasInTune) {
+        playInTunePing();
+      }
+      wasInTune = isInTune;
+    }
+
+    // Start listening
+    async function startListening() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 4096; // Larger buffer for better low frequency detection
+        analyser.smoothingTimeConstant = 0.8;
+
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+
+        isListening = true;
+        startContainer.classList.add('hidden');
+
+        // Start detection loop
+        const buffer = new Float32Array(analyser.fftSize);
+
+        function detect() {
+          if (!isListening) return;
+
+          analyser.getFloatTimeDomainData(buffer);
+          const { frequency: rawFreq, confidence } = yinPitchDetect(buffer, audioContext.sampleRate);
+
+          // Only use readings with good confidence
+          const frequency = confidence > 0.92 ? smoothFrequency(rawFreq) : smoothFrequency(-1);
+          updateDisplay(frequency);
+
+          requestAnimationFrame(detect);
+        }
+
+        detect();
+      } catch (err) {
+        console.error('Microphone access denied:', err);
+        alert('Please allow microphone access to use the tuner.');
+      }
+    }
+
+    // Play reference tone
+    function playReferenceTone(frequency) {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 1.5);
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', startListening);
+
+    stringsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.string-btn');
+      if (!btn) return;
+
+      // Remove active from all
+      document.querySelectorAll('.string-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Play reference tone
+      const freq = parseFloat(btn.dataset.freq);
+      playReferenceTone(freq);
+    });
+
+    tuningSelector.addEventListener('click', openTuningModal);
+    closeTuningModal.addEventListener('click', closeTuningModalFn);
+    tuningModal.addEventListener('click', (e) => {
+      if (e.target === tuningModal) closeTuningModalFn();
+    });
+
+    tuningList.addEventListener('click', (e) => {
+      const option = e.target.closest('.tuning-option');
+      if (option) {
+        selectTuning(option.dataset.tuning);
+      }
+    });
+
+    // Sound toggle
+    const soundToggle = document.getElementById('soundToggle');
+
+    function updateSoundToggle() {
+      soundToggle.classList.toggle('enabled', pingEnabled);
+      soundToggle.title = pingEnabled ? 'Sound on' : 'Sound off';
+    }
+
+    soundToggle.addEventListener('click', () => {
+      pingEnabled = !pingEnabled;
+      localStorage.setItem('pingEnabled', pingEnabled);
+      updateSoundToggle();
+    });
+
+    updateSoundToggle();
+
+    // Load saved tuning preference
+    const savedTuning = localStorage.getItem('selectedTuning');
+    if (savedTuning) {
+      selectTuning(savedTuning);
+    } else {
+      renderStrings();
+      renderTuningList();
+    }
+  </script>
+</body>
+</html>
