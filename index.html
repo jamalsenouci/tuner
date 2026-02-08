@@ -947,6 +947,7 @@
 
     .install-btn.visible {
       display: flex;
+      z-index: 110;
     }
 
     /* Install instructions modal */
@@ -2655,8 +2656,9 @@
     let deferredPrompt = null;
 
     const isIos = /iPhone|iPad/.test(navigator.userAgent);
+    const isSafari = isIos && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent);
 
-    // Android/Chrome: capture the native install prompt
+    // Android/Chrome desktop: capture the native install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -2670,14 +2672,27 @@
 
     installBtn.addEventListener('click', () => {
       if (deferredPrompt) {
-        // Android: trigger native install
+        // Android/desktop Chrome: trigger native install
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(() => {
           deferredPrompt = null;
           installBtn.classList.remove('visible');
         });
+      } else if (isIos && !isSafari) {
+        // Non-Safari iOS browser: tell user to open in Safari
+        installSteps.innerHTML = `
+          <div class="install-step">
+            <span class="install-step-num">1</span>
+            <span class="install-step-text">Open this page in <strong>Safari</strong></span>
+          </div>
+          <div class="install-step">
+            <span class="install-step-num">2</span>
+            <span class="install-step-text">Only Safari can install web apps on iOS</span>
+          </div>
+        `;
+        installModal.classList.add('open');
       } else {
-        // iOS: show instructions
+        // Safari: show Add to Home Screen instructions
         const shareIcon = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z"/></svg>';
         installSteps.innerHTML = `
           <div class="install-step">
