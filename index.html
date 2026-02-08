@@ -635,6 +635,39 @@
     .no-signal .needle-container {
       opacity: 0.3;
     }
+
+    /* Input level meter */
+    .level-meter {
+      width: 100%;
+      max-width: 340px;
+      height: 4px;
+      background: var(--bg-surface);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .level-meter.active {
+      opacity: 1;
+    }
+
+    .level-meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 2px;
+      background: var(--amber);
+      transition: width 0.08s linear, background 0.2s ease;
+    }
+
+    .level-meter-fill.hot {
+      background: #f97316;
+    }
+
+    .level-meter-fill.clip {
+      background: #ef4444;
+    }
   </style>
 </head>
 <body>
@@ -663,6 +696,10 @@
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
     </svg>
   </button>
+
+  <div class="level-meter" id="levelMeter">
+    <div class="level-meter-fill" id="levelMeterFill"></div>
+  </div>
 
   <main class="tuner-container" id="tunerContainer">
     <div class="note-display">
@@ -1030,6 +1067,14 @@
       }
     }
 
+    // Last displayed values for skipping redundant DOM updates
+    let lastDisplayedNote = '';
+    let lastDisplayedOctave = '';
+    let lastDisplayedCents = null;
+    let lastDisplayedColor = '';
+    let lastClosestIdx = -1;
+    let lastNoSignal = false;
+
     // In-tune ping sound
     let wasInTune = false;
     let lastPingTime = 0;
@@ -1073,34 +1118,54 @@
     // Update display
     function updateDisplay(frequency) {
       if (frequency === -1 || frequency < 60 || frequency > 1000) {
-        tunerContainer.classList.add('no-signal');
+        if (!lastNoSignal) {
+          tunerContainer.classList.add('no-signal');
+          lastNoSignal = true;
+        }
         return;
       }
 
-      tunerContainer.classList.remove('no-signal');
+      if (lastNoSignal) {
+        tunerContainer.classList.remove('no-signal');
+        lastNoSignal = false;
+      }
 
       const { note, octave, cents: rawCents } = frequencyToNote(frequency);
 
       // Apply smoothing to cents for stable display
       const cents = smoothCents(rawCents);
 
-      currentNoteEl.textContent = note;
-      currentOctaveEl.textContent = octave;
+      if (note !== lastDisplayedNote) {
+        currentNoteEl.textContent = note;
+        lastDisplayedNote = note;
+      }
+      if (octave !== lastDisplayedOctave) {
+        currentOctaveEl.textContent = octave;
+        lastDisplayedOctave = octave;
+      }
+
       frequencyEl.textContent = `${frequency.toFixed(1)} Hz`;
 
-      // Update cents
-      const centsPrefix = cents > 0 ? '+' : '';
-      centsValueEl.textContent = `${centsPrefix}${cents}`;
+      if (cents !== lastDisplayedCents) {
+        // Update cents
+        const centsPrefix = cents > 0 ? '+' : '';
+        centsValueEl.textContent = `${centsPrefix}${cents}`;
 
-      // Update needle (map cents to angle, -50 to +50 cents = -45 to +45 degrees)
-      const angle = (cents / 50) * 45;
-      const clampedAngle = Math.max(-45, Math.min(45, angle));
-      needleEl.style.transform = `translateX(-50%) rotate(${clampedAngle}deg)`;
+        // Update needle (map cents to angle, -50 to +50 cents = -45 to +45 degrees)
+        const angle = (cents / 50) * 45;
+        const clampedAngle = Math.max(-45, Math.min(45, angle));
+        needleEl.style.transform = `translateX(-50%) rotate(${clampedAngle}deg)`;
+
+        lastDisplayedCents = cents;
+      }
 
       // Update colors based on accuracy
       const { color, glow } = getTuneColor(cents);
-      document.documentElement.style.setProperty('--tune-color', color);
-      document.documentElement.style.setProperty('--tune-glow', glow);
+      if (color !== lastDisplayedColor) {
+        document.documentElement.style.setProperty('--tune-color', color);
+        document.documentElement.style.setProperty('--tune-glow', glow);
+        lastDisplayedColor = color;
+      }
 
       // Update strobe if in strobe mode
       drawStrobe(cents);
@@ -1115,9 +1180,12 @@
           closestIdx = i;
         }
       });
-      document.querySelectorAll('.string-btn').forEach((btn, i) => {
-        btn.classList.toggle('auto-detected', i === closestIdx && closestDist < 2);
-      });
+      if (closestIdx !== lastClosestIdx) {
+        document.querySelectorAll('.string-btn').forEach((btn, i) => {
+          btn.classList.toggle('auto-detected', i === closestIdx && closestDist < 2);
+        });
+        lastClosestIdx = closestIdx;
+      }
 
       // Play ping when transitioning to in-tune
       const isInTune = Math.abs(cents) <= 5;
@@ -1145,10 +1213,26 @@
         // Start detection loop
         const buffer = new Float32Array(analyser.fftSize);
 
+        const levelMeter = document.getElementById('levelMeter');
+        const levelMeterFill = document.getElementById('levelMeterFill');
+        levelMeter.classList.add('active');
+
         function detect() {
           if (!isListening) return;
 
           analyser.getFloatTimeDomainData(buffer);
+
+          // Update input level meter
+          let rms = 0;
+          for (let i = 0; i < buffer.length; i++) {
+            rms += buffer[i] * buffer[i];
+          }
+          rms = Math.sqrt(rms / buffer.length);
+          const levelPct = Math.min(100, rms * 500);
+          levelMeterFill.style.width = levelPct + '%';
+          levelMeterFill.classList.toggle('hot', levelPct > 70);
+          levelMeterFill.classList.toggle('clip', levelPct > 90);
+
           const { frequency: rawFreq, confidence } = yinPitchDetect(buffer, audioContext.sampleRate);
 
           // Only use readings with good confidence
