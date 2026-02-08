@@ -53,7 +53,7 @@
       align-items: center;
       justify-content: space-between;
       min-height: 100dvh;
-      padding: env(safe-area-inset-top) 24px calc(env(safe-area-inset-bottom) + 24px);
+      padding: env(safe-area-inset-top) 24px calc(env(safe-area-inset-bottom) + 64px);
       user-select: none;
       -webkit-user-select: none;
     }
@@ -668,6 +668,232 @@
     .level-meter-fill.clip {
       background: #ef4444;
     }
+
+    /* Tab bar */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      background: var(--bg-surface);
+      border-top: 1px solid rgba(232, 228, 220, 0.06);
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 90;
+    }
+
+    .tab-bar-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .tab-bar-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: var(--text-muted);
+      transition: fill 0.2s ease;
+    }
+
+    .tab-bar-btn span {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      transition: color 0.2s ease;
+    }
+
+    .tab-bar-btn.active svg {
+      fill: var(--amber);
+    }
+
+    .tab-bar-btn.active span {
+      color: var(--amber);
+    }
+
+    /* View visibility */
+    .tuner-view-wrapper {
+      display: contents;
+    }
+
+    .tuner-view-wrapper.hidden,
+    .tuner-view-wrapper.hidden ~ .strings-container {
+      display: none;
+    }
+
+    /* Metronome */
+    .metronome-container {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 340px;
+      gap: 32px;
+    }
+
+    .metronome-container.active {
+      display: flex;
+    }
+
+    .bpm-display {
+      text-align: center;
+    }
+
+    .bpm-value {
+      font-family: 'Instrument Serif', serif;
+      font-size: 96px;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--amber);
+      text-shadow: 0 0 40px var(--amber-glow);
+    }
+
+    .bpm-label {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      margin-top: 8px;
+    }
+
+    .bpm-controls {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .bpm-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      color: var(--text-primary);
+      transition: all 0.15s ease;
+    }
+
+    .bpm-btn:active {
+      transform: scale(0.92);
+      background: rgba(212, 168, 83, 0.1);
+      border-color: var(--amber);
+    }
+
+    .beat-indicators {
+      display: flex;
+      gap: 16px;
+    }
+
+    .beat-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.15);
+      transition: all 0.1s ease;
+    }
+
+    .beat-dot.accent {
+      border-color: rgba(212, 168, 83, 0.3);
+    }
+
+    .beat-dot.active {
+      background: var(--amber);
+      border-color: var(--amber);
+      box-shadow: 0 0 16px var(--amber-glow);
+    }
+
+    .metronome-play {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 2px solid rgba(212, 168, 83, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .metronome-play:active {
+      transform: scale(0.95);
+    }
+
+    .metronome-play.playing {
+      border-color: var(--amber);
+      box-shadow: 0 0 30px var(--amber-dim);
+    }
+
+    .metronome-play svg {
+      width: 28px;
+      height: 28px;
+      fill: var(--amber);
+    }
+
+    .tap-tempo {
+      padding: 12px 28px;
+      border-radius: 24px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+    }
+
+    .tap-tempo:active {
+      transform: scale(0.96);
+      background: rgba(212, 168, 83, 0.1);
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .time-sig-selector {
+      display: flex;
+      gap: 8px;
+    }
+
+    .time-sig-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.08);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .time-sig-btn:active {
+      transform: scale(0.96);
+    }
+
+    .time-sig-btn.active {
+      border-color: rgba(212, 168, 83, 0.4);
+      color: var(--amber);
+      background: rgba(212, 168, 83, 0.08);
+    }
   </style>
 </head>
 <body>
@@ -681,6 +907,8 @@
   <header class="header">
     <h1 class="logo">Tuner</h1>
   </header>
+
+  <div class="tuner-view-wrapper" id="tunerViewWrapper">
 
   <button class="mode-toggle" id="modeToggle" title="Switch meter mode">
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -767,6 +995,53 @@
     <div class="strings" id="strings"></div>
   </nav>
 
+  </div><!-- /tuner-view-wrapper -->
+
+  <!-- Metronome View -->
+  <div class="metronome-container" id="metronomeContainer">
+    <div class="bpm-display">
+      <div class="bpm-value" id="bpmValue">120</div>
+      <div class="bpm-label">BPM</div>
+    </div>
+
+    <div class="bpm-controls">
+      <button class="bpm-btn" id="bpmDown">&minus;</button>
+      <button class="bpm-btn" id="bpmUp">+</button>
+    </div>
+
+    <div class="beat-indicators" id="beatIndicators"></div>
+
+    <button class="metronome-play" id="metronomePlay">
+      <svg id="playIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </button>
+
+    <button class="tap-tempo" id="tapTempo">Tap Tempo</button>
+
+    <div class="time-sig-selector" id="timeSigSelector">
+      <button class="time-sig-btn active" data-beats="4">4/4</button>
+      <button class="time-sig-btn" data-beats="3">3/4</button>
+      <button class="time-sig-btn" data-beats="6">6/8</button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-bar-btn active" id="tabTuner" data-view="tuner">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v5.27l4.5 2.67-.75 1.27L11 13V7z"/>
+      </svg>
+      <span>Tuner</span>
+    </button>
+    <button class="tab-bar-btn" id="tabMetronome" data-view="metronome">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L6 22h12L12 2zm0 5.5l3.5 12.5h-7L12 7.5zM11 14h2v4h-2v-4z"/>
+      </svg>
+      <span>Metronome</span>
+    </button>
+  </nav>
+
   <script>
     // Audio context and analyser
     let audioContext;
@@ -778,6 +1053,20 @@
     let meterMode = localStorage.getItem('meterMode') || 'needle';
     let strobePhase = 0;
     let strobeCanvas, strobeCtx;
+
+    // View state
+    let currentView = 'tuner';
+
+    // Metronome state
+    let metronomePlaying = false;
+    let metronomeBpm = parseInt(localStorage.getItem('metronomeBpm')) || 120;
+    let metronomeBeats = parseInt(localStorage.getItem('metronomeBeats')) || 4;
+    let metronomeCurrentBeat = 0;
+    let metronomeTimerId = null;
+    let nextNoteTime = 0;
+    let tapTimes = [];
+    const LOOKAHEAD = 25;
+    const SCHEDULE_AHEAD = 0.1;
 
     // Note frequencies (A4 = 440Hz)
     const A4 = 440;
@@ -1413,6 +1702,162 @@
     initStrobe();
     setMeterMode(meterMode);
     window.addEventListener('resize', resizeStrobe);
+
+    // === View switching ===
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('tunerViewWrapper').classList.toggle('hidden', view !== 'tuner');
+      document.getElementById('metronomeContainer').classList.toggle('active', view === 'metronome');
+      document.getElementById('startContainer').style.display = view === 'tuner' ? '' : 'none';
+      document.querySelectorAll('.tab-bar-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+      });
+    }
+
+    document.querySelectorAll('.tab-bar-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchView(btn.dataset.view));
+    });
+
+    // === Metronome ===
+    function ensureAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioContext;
+    }
+
+    function renderBeatIndicators() {
+      const container = document.getElementById('beatIndicators');
+      container.innerHTML = '';
+      for (let i = 0; i < metronomeBeats; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
+        container.appendChild(dot);
+      }
+    }
+
+    function updateBeatIndicator(beat) {
+      const dots = document.querySelectorAll('.beat-dot');
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === beat);
+      });
+    }
+
+    function scheduleNote(beat, time) {
+      const ctx = ensureAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.value = beat === 0 ? 1200 : 800;
+      gain.gain.setValueAtTime(0.4, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.05);
+
+      // Schedule visual update
+      const delay = (time - ctx.currentTime) * 1000;
+      setTimeout(() => updateBeatIndicator(beat), Math.max(0, delay));
+    }
+
+    function metronomeScheduler() {
+      const ctx = ensureAudioContext();
+      while (nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) {
+        scheduleNote(metronomeCurrentBeat, nextNoteTime);
+        nextNoteTime += 60 / metronomeBpm;
+        metronomeCurrentBeat = (metronomeCurrentBeat + 1) % metronomeBeats;
+      }
+      metronomeTimerId = setTimeout(metronomeScheduler, LOOKAHEAD);
+    }
+
+    function startMetronome() {
+      const ctx = ensureAudioContext();
+      metronomePlaying = true;
+      metronomeCurrentBeat = 0;
+      nextNoteTime = ctx.currentTime;
+      document.getElementById('metronomePlay').classList.add('playing');
+      document.getElementById('playIcon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+      metronomeScheduler();
+    }
+
+    function stopMetronome() {
+      metronomePlaying = false;
+      clearTimeout(metronomeTimerId);
+      metronomeTimerId = null;
+      document.getElementById('metronomePlay').classList.remove('playing');
+      document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+      document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active'));
+    }
+
+    function setBpm(bpm) {
+      metronomeBpm = Math.max(30, Math.min(300, bpm));
+      document.getElementById('bpmValue').textContent = metronomeBpm;
+      localStorage.setItem('metronomeBpm', metronomeBpm);
+    }
+
+    function setTimeSig(beats) {
+      metronomeBeats = beats;
+      localStorage.setItem('metronomeBeats', beats);
+      document.querySelectorAll('.time-sig-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.beats) === beats);
+      });
+      renderBeatIndicators();
+      if (metronomePlaying) {
+        stopMetronome();
+        startMetronome();
+      }
+    }
+
+    // Metronome event listeners
+    document.getElementById('metronomePlay').addEventListener('click', () => {
+      metronomePlaying ? stopMetronome() : startMetronome();
+    });
+
+    document.getElementById('bpmUp').addEventListener('click', () => setBpm(metronomeBpm + 1));
+    document.getElementById('bpmDown').addEventListener('click', () => setBpm(metronomeBpm - 1));
+
+    // Long press for fast BPM change
+    ['bpmUp', 'bpmDown'].forEach(id => {
+      let interval;
+      const btn = document.getElementById(id);
+      const delta = id === 'bpmUp' ? 1 : -1;
+      btn.addEventListener('pointerdown', () => {
+        interval = setInterval(() => setBpm(metronomeBpm + delta), 100);
+      });
+      btn.addEventListener('pointerup', () => clearInterval(interval));
+      btn.addEventListener('pointerleave', () => clearInterval(interval));
+    });
+
+    document.getElementById('tapTempo').addEventListener('click', () => {
+      const now = Date.now();
+      tapTimes.push(now);
+      // Keep last 5 taps
+      if (tapTimes.length > 5) tapTimes.shift();
+      if (tapTimes.length >= 2) {
+        const intervals = [];
+        for (let i = 1; i < tapTimes.length; i++) {
+          intervals.push(tapTimes[i] - tapTimes[i - 1]);
+        }
+        const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+        setBpm(Math.round(60000 / avgInterval));
+      }
+      // Reset if gap is too long
+      if (tapTimes.length >= 2 && now - tapTimes[tapTimes.length - 2] > 3000) {
+        tapTimes = [now];
+      }
+    });
+
+    document.getElementById('timeSigSelector').addEventListener('click', (e) => {
+      const btn = e.target.closest('.time-sig-btn');
+      if (btn) setTimeSig(parseInt(btn.dataset.beats));
+    });
+
+    // Initialize metronome
+    setBpm(metronomeBpm);
+    setTimeSig(metronomeBeats);
   </script>
 </body>
 </html>
