@@ -1562,7 +1562,7 @@
     let smoothedFrequency = -1;
     let displayedCents = 0;
     let stableCount = 0;
-    const EMA_ALPHA = 0.35; // Exponential moving average factor (lower = smoother)
+    const EMA_ALPHA = 0.2; // Exponential moving average factor (lower = smoother)
 
     // Pre-compute Hanning window
     let hanningWindow = null;
@@ -1582,7 +1582,7 @@
       const SIZE = buffer.length;
       const yinBufferSize = Math.floor(SIZE / 2);
       const yinBuffer = new Float32Array(yinBufferSize);
-      const threshold = 0.3;
+      const threshold = 0.15;
 
       // Apply Hanning window for better detection of weak signals
       const window = getHanningWindow(SIZE);
@@ -1595,7 +1595,7 @@
       rms = Math.sqrt(rms / SIZE);
 
       // Not enough signal
-      if (rms < 0.001) return { frequency: -1, confidence: 0 };
+      if (rms < 0.01) return { frequency: -1, confidence: 0 };
 
       // Step 1: Compute the difference function
       let runningSum = 0;
@@ -1728,6 +1728,54 @@
       }
 
       return { frequency: bestFreq, confidence: bestConfidence };
+    }
+
+    // Targeted autocorrelation refinement — given a rough frequency estimate
+    // from FFT, searches a narrow range of lags for the precise pitch.
+    // Much faster than full YIN (checks ~60 lags vs ~2000) and more precise
+    // than FFT alone, especially for low frequencies.
+    function refinePitch(buffer, roughFreq, sampleRate) {
+      const expectedLag = sampleRate / roughFreq;
+      // Search ±1 semitone
+      const searchRange = Math.max(4, Math.ceil(expectedLag * 0.06));
+      const minLag = Math.max(2, Math.floor(expectedLag - searchRange));
+      const maxLag = Math.min(Math.floor(buffer.length / 2), Math.ceil(expectedLag + searchRange));
+
+      const N = Math.min(buffer.length, 4096);
+      let bestLag = expectedLag;
+      let bestCorr = -1;
+      const correlations = new Float32Array(maxLag - minLag + 1);
+
+      for (let lag = minLag; lag <= maxLag; lag++) {
+        let corr = 0, e1 = 0, e2 = 0;
+        for (let i = 0; i < N - lag; i++) {
+          corr += buffer[i] * buffer[i + lag];
+          e1 += buffer[i] * buffer[i];
+          e2 += buffer[i + lag] * buffer[i + lag];
+        }
+        const norm = Math.sqrt(e1 * e2);
+        const normalized = norm > 0 ? corr / norm : 0;
+        correlations[lag - minLag] = normalized;
+        if (normalized > bestCorr) {
+          bestCorr = normalized;
+          bestLag = lag;
+        }
+      }
+
+      // Parabolic interpolation for sub-sample precision
+      const idx = bestLag - minLag;
+      if (idx > 0 && idx < correlations.length - 1) {
+        const a = correlations[idx - 1];
+        const b = correlations[idx];
+        const c = correlations[idx + 1];
+        const denom = a - 2 * b + c;
+        if (denom !== 0) {
+          const p = 0.5 * (a - c) / denom;
+          bestLag = bestLag + p;
+        }
+      }
+
+      return sampleRate / bestLag;
     }
 
     // Smooth frequency readings with aggressive filtering
@@ -2024,8 +2072,10 @@
             // TRACKING MODE: FFT spectral peak tracking (fast)
             const fftResult = trackPitchFFT(smoothedFrequency);
 
-            if (fftResult.confidence > 0.15) {
-              rawFreq = fftResult.frequency;
+            if (fftResult.confidence > 0.3) {
+              // Refine the FFT estimate with targeted autocorrelation
+              // Critical for low strings where FFT bin resolution is poor
+              rawFreq = refinePitch(buffer, fftResult.frequency, audioContext.sampleRate);
               confidence = fftResult.confidence;
             } else {
               rawFreq = -1;
@@ -2056,7 +2106,7 @@
             confidence = yinResult.confidence;
           }
 
-          const confThreshold = lockedNoteIndex >= 0 ? 0.1 : 0.5;
+          const confThreshold = lockedNoteIndex >= 0 ? 0.25 : 0.5;
           const frequency = confidence > confThreshold ? smoothFrequency(rawFreq) : smoothFrequency(-1);
           updateDisplay(frequency);
 
