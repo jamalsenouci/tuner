@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0a0a0a">
   <title>Tuner</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
 
@@ -910,6 +911,136 @@
       background: rgba(212, 168, 83, 0.08);
     }
 
+    /* Install button */
+    .install-btn {
+      position: absolute;
+      left: 24px;
+      top: calc(env(safe-area-inset-top) + 20px);
+      height: 36px;
+      padding: 0 14px;
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      background: var(--bg-surface);
+      border-radius: 18px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      transition: all 0.2s ease;
+    }
+
+    .install-btn:active {
+      transform: scale(0.96);
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .install-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    .install-btn.visible {
+      display: flex;
+    }
+
+    /* Install instructions modal */
+    .install-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .install-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .install-modal-content {
+      background: var(--bg-surface);
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 100%;
+      text-align: center;
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+    }
+
+    .install-modal.open .install-modal-content {
+      transform: scale(1);
+    }
+
+    .install-modal-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 20px;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .install-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      padding: 10px 0;
+    }
+
+    .install-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(212, 168, 83, 0.12);
+      color: var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .install-step-text {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .install-step-text svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--amber);
+      vertical-align: -3px;
+    }
+
+    .install-modal-close {
+      margin-top: 20px;
+      padding: 10px 28px;
+      border-radius: 20px;
+      background: rgba(212, 168, 83, 0.12);
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--amber);
+      letter-spacing: 0.1em;
+    }
+
+    .install-modal-close:active {
+      transform: scale(0.96);
+    }
+
     /* Custom tuning */
     .custom-tuning-add {
       display: flex;
@@ -1097,6 +1228,21 @@
   <header class="header">
     <h1 class="logo">Tuner</h1>
   </header>
+
+  <button class="install-btn" id="installBtn">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+    </svg>
+    Install
+  </button>
+
+  <div class="install-modal" id="installModal">
+    <div class="install-modal-content">
+      <h2 class="install-modal-title">Install Tuner</h2>
+      <div id="installSteps"></div>
+      <button class="install-modal-close" id="installModalClose">Got it</button>
+    </div>
+  </div>
 
   <div class="tuner-view-wrapper" id="tunerViewWrapper">
 
@@ -1840,17 +1986,33 @@
         const levelMeterFill = document.getElementById('levelMeterFill');
         levelMeter.classList.add('active');
 
+        // Use a 4096 subarray for YIN (16x faster than full 16384)
+        const yinBuffer = new Float32Array(4096);
+        let yinSkipCounter = 0;
+
+        // Performance monitoring
+        let perfSamples = [];
+        let perfInterval = setInterval(() => {
+          if (perfSamples.length > 0) {
+            const avg = perfSamples.reduce((a, b) => a + b) / perfSamples.length;
+            const max = Math.max(...perfSamples);
+            console.log(`[tuner perf] avg: ${avg.toFixed(1)}ms, max: ${max.toFixed(1)}ms, fps: ${perfSamples.length} (${perfSamples.length < 50 ? 'SLOW' : 'ok'})`);
+            perfSamples = [];
+          }
+        }, 1000);
+
         function detect() {
           if (!isListening) return;
+          const t0 = performance.now();
 
           analyser.getFloatTimeDomainData(buffer);
 
-          // Compute raw RMS for level meter
+          // Compute raw RMS for level meter (sample every 4th for speed)
           let rawRMS = 0;
-          for (let i = 0; i < buffer.length; i++) {
+          for (let i = 0; i < buffer.length; i += 4) {
             rawRMS += buffer[i] * buffer[i];
           }
-          rawRMS = Math.sqrt(rawRMS / buffer.length);
+          rawRMS = Math.sqrt(rawRMS / (buffer.length / 4));
           const levelPct = Math.min(100, rawRMS * 500);
           levelMeterFill.style.width = levelPct + '%';
           levelMeterFill.classList.toggle('hot', levelPct > 70);
@@ -1859,37 +2021,37 @@
           let rawFreq, confidence;
 
           if (lockedNoteIndex >= 0 && smoothedFrequency > 0) {
-            // TRACKING MODE: use FFT spectral peak tracking
-            // Much more robust for decaying signals - finds peaks
-            // in the frequency spectrum near the expected note and
-            // its harmonics, even when the signal is very weak
+            // TRACKING MODE: FFT spectral peak tracking (fast)
             const fftResult = trackPitchFFT(smoothedFrequency);
 
             if (fftResult.confidence > 0.15) {
               rawFreq = fftResult.frequency;
               confidence = fftResult.confidence;
             } else {
-              // FFT lost it too - try YIN with gain compensation as fallback
               rawFreq = -1;
               confidence = 0;
             }
 
-            // Also run YIN to detect note changes (new pluck of different string)
-            // YIN is better at identifying new notes from strong signals
-            if (rawRMS > 0.02) {
-              const yinResult = yinPitchDetect(buffer, audioContext.sampleRate);
+            // Run YIN only every 10th frame AND only on strong signal
+            // Uses last 4096 samples (not full 16384) for 16x speedup
+            yinSkipCounter++;
+            if (rawRMS > 0.03 && yinSkipCounter >= 10) {
+              yinSkipCounter = 0;
+              // Copy last 4096 samples from the full buffer
+              yinBuffer.set(buffer.subarray(buffer.length - 4096));
+              const yinResult = yinPitchDetect(yinBuffer, audioContext.sampleRate);
               if (yinResult.confidence > 0.93 && yinResult.frequency > 0) {
                 const yinNoteIndex = Math.round(12 * Math.log2(yinResult.frequency / A4)) + 69;
                 if (yinNoteIndex !== lockedNoteIndex) {
-                  // Strong detection of a different note - switch
                   rawFreq = yinResult.frequency;
                   confidence = yinResult.confidence;
                 }
               }
             }
           } else {
-            // ACQUISITION MODE: use YIN to identify the note
-            const yinResult = yinPitchDetect(buffer, audioContext.sampleRate);
+            // ACQUISITION MODE: YIN on 4096 samples (fast)
+            yinBuffer.set(buffer.subarray(buffer.length - 4096));
+            const yinResult = yinPitchDetect(yinBuffer, audioContext.sampleRate);
             rawFreq = yinResult.frequency;
             confidence = yinResult.confidence;
           }
@@ -1898,6 +2060,7 @@
           const frequency = confidence > confThreshold ? smoothFrequency(rawFreq) : smoothFrequency(-1);
           updateDisplay(frequency);
 
+          perfSamples.push(performance.now() - t0);
           requestAnimationFrame(detect);
         }
 
@@ -2427,6 +2590,75 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   }
+
+  // PWA install logic
+  (() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || navigator.standalone === true;
+    if (isStandalone) return;
+
+    const installBtn = document.getElementById('installBtn');
+    const installModal = document.getElementById('installModal');
+    const installSteps = document.getElementById('installSteps');
+    const installModalClose = document.getElementById('installModalClose');
+    let deferredPrompt = null;
+
+    const isIos = /iPhone|iPad/.test(navigator.userAgent);
+
+    // Android/Chrome: capture the native install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.classList.add('visible');
+    });
+
+    // iOS: show button with instructions
+    if (isIos) {
+      installBtn.classList.add('visible');
+    }
+
+    installBtn.addEventListener('click', () => {
+      if (deferredPrompt) {
+        // Android: trigger native install
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          installBtn.classList.remove('visible');
+        });
+      } else {
+        // iOS: show instructions
+        const shareIcon = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z"/></svg>';
+        installSteps.innerHTML = `
+          <div class="install-step">
+            <span class="install-step-num">1</span>
+            <span class="install-step-text">Tap the Share button ${shareIcon} in Safari's toolbar</span>
+          </div>
+          <div class="install-step">
+            <span class="install-step-num">2</span>
+            <span class="install-step-text">Scroll down and tap <strong>Add to Home Screen</strong></span>
+          </div>
+          <div class="install-step">
+            <span class="install-step-num">3</span>
+            <span class="install-step-text">Tap <strong>Add</strong> to install</span>
+          </div>
+        `;
+        installModal.classList.add('open');
+      }
+    });
+
+    installModalClose.addEventListener('click', () => {
+      installModal.classList.remove('open');
+    });
+
+    installModal.addEventListener('click', (e) => {
+      if (e.target === installModal) installModal.classList.remove('open');
+    });
+
+    // Hide button once installed
+    window.addEventListener('appinstalled', () => {
+      installBtn.classList.remove('visible');
+    });
+  })();
 </script>
 </body>
 </html>
