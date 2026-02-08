@@ -2128,6 +2128,9 @@
       if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
       }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
 
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
