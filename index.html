@@ -2685,12 +2685,16 @@
         // Non-Safari iOS browser: tell user to open in Safari
         installSteps.innerHTML = `
           <div class="install-step">
+            <span class="install-step-num">!</span>
+            <span class="install-step-text">Installing on iPhone only works in <strong>Safari</strong>. It does not work in Chrome or other browsers.</span>
+          </div>
+          <div class="install-step">
             <span class="install-step-num">1</span>
-            <span class="install-step-text">Open this page in <strong>Safari</strong></span>
+            <span class="install-step-text">Copy this page's URL and open it in <strong>Safari</strong></span>
           </div>
           <div class="install-step">
             <span class="install-step-num">2</span>
-            <span class="install-step-text">Only Safari can install web apps on iOS</span>
+            <span class="install-step-text">Then tap <strong>Install</strong> again from there</span>
           </div>
         `;
         installModal.classList.add('open');
@@ -2700,7 +2704,7 @@
         installSteps.innerHTML = `
           <div class="install-step">
             <span class="install-step-num">1</span>
-            <span class="install-step-text">Tap the Share button ${shareIcon} in Safari's toolbar</span>
+            <span class="install-step-text">Tap the Share button ${shareIcon} at the bottom of Safari</span>
           </div>
           <div class="install-step">
             <span class="install-step-num">2</span>
