@@ -1160,6 +1160,8 @@
       </div>
     </div>
 
+    <p class="strobe-hint">Bars stop moving when in tune.<br>Left = flat, right = sharp.</p>
+
     <div class="cents-display">
       <span class="cents-value" id="centsValue">0</span> cents
     </div>
@@ -1182,6 +1184,11 @@
         <div class="custom-string-count" id="customStringCount"></div>
 
         <label>Notes</label>
+        <div class="custom-string-row" style="margin-bottom: 4px;">
+          <span></span>
+          <span style="flex:1; font-size:10px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">Note</span>
+          <span style="flex:1; font-size:10px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">Octave</span>
+        </div>
         <div class="custom-string-rows" id="customStringRows"></div>
 
         <div class="custom-tuning-actions">
@@ -1397,12 +1404,13 @@
 
     // Frequency smoothing - much more aggressive
     const frequencyHistory = [];
-    const HISTORY_SIZE = 12;
+    const HISTORY_SIZE = 6;
     let lastValidFrequency = -1;
+    let lockedNoteIndex = -1;
     let smoothedFrequency = -1;
     let displayedCents = 0;
     let stableCount = 0;
-    const EMA_ALPHA = 0.15; // Exponential moving average factor (lower = smoother)
+    const EMA_ALPHA = 0.35; // Exponential moving average factor (lower = smoother)
 
     // YIN pitch detection algorithm (more accurate than simple autocorrelation)
     function yinPitchDetect(buffer, sampleRate) {
@@ -1419,7 +1427,7 @@
       rms = Math.sqrt(rms / SIZE);
 
       // Not enough signal
-      if (rms < 0.02) return { frequency: -1, confidence: 0 };
+      if (rms < 0.01) return { frequency: -1, confidence: 0 };
 
       // Step 1: Compute the difference function
       let runningSum = 0;
@@ -1491,6 +1499,7 @@
           frequencyHistory.length = 0;
           stableCount = 0;
           smoothedFrequency = -1;
+          lastValidFrequency = -1;
         }
       }
 
@@ -1500,7 +1509,7 @@
       }
 
       // Need at least 4 readings before showing anything
-      if (frequencyHistory.length < 4) return -1;
+      if (frequencyHistory.length < 2) return -1;
 
       // Filter out outliers using median
       const sorted = [...frequencyHistory].sort((a, b) => a - b);
@@ -1513,7 +1522,7 @@
       });
 
       // Need at least 3 consistent readings
-      if (filtered.length < 3) return smoothedFrequency > 0 ? smoothedFrequency : -1;
+      if (filtered.length < 2) return smoothedFrequency > 0 ? smoothedFrequency : -1;
 
       const avg = filtered.reduce((a, b) => a + b, 0) / filtered.length;
 
@@ -1580,10 +1589,6 @@
     // Haptic feedback
     function triggerHaptic() {
       try {
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics) {
-          window.Capacitor.Plugins.Haptics.impact({ style: 'MEDIUM' });
-          return;
-        }
         if (navigator.vibrate) {
           navigator.vibrate(50);
         }
@@ -1633,6 +1638,7 @@
           // Clear auto-detect highlighting
           document.querySelectorAll('.string-btn').forEach(btn => btn.classList.remove('auto-detected'));
           lastClosestIdx = -1;
+          lockedNoteIndex = -1;
         }
         return;
       }
@@ -1642,7 +1648,8 @@
         lastNoSignal = false;
       }
 
-      const { note, octave, cents: rawCents } = frequencyToNote(frequency);
+      const { note, octave, cents: rawCents, noteIndex } = frequencyToNote(frequency);
+      lockedNoteIndex = noteIndex;
 
       // Apply smoothing to cents for stable display
       const cents = smoothCents(rawCents);
@@ -1746,8 +1753,15 @@
 
           const { frequency: rawFreq, confidence } = yinPitchDetect(buffer, audioContext.sampleRate);
 
-          // Only use readings with good confidence
-          const frequency = confidence > 0.92 ? smoothFrequency(rawFreq) : smoothFrequency(-1);
+          // Use higher confidence threshold to switch notes, lower to track current note
+          let confThreshold = 0.8;
+          if (lockedNoteIndex >= 0 && rawFreq > 0) {
+            const newNoteIndex = Math.round(12 * Math.log2(rawFreq / A4)) + 69;
+            if (newNoteIndex !== lockedNoteIndex) {
+              confThreshold = 0.93;
+            }
+          }
+          const frequency = confidence > confThreshold ? smoothFrequency(rawFreq) : smoothFrequency(-1);
           updateDisplay(frequency);
 
           requestAnimationFrame(detect);
@@ -2275,5 +2289,10 @@
     // Re-render to include custom tunings
     renderTuningList();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
 </body>
 </html>
