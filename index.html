@@ -873,6 +873,7 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
       transition: all 0.15s ease;
+      touch-action: manipulation;
     }
 
     .tap-tempo:active {
@@ -1501,6 +1502,88 @@
       return { frequency, confidence };
     }
 
+    // FFT spectral peak tracking - used when we have a locked note
+    // Finds the peak near the expected frequency (and its harmonics)
+    // Works much deeper into decay than YIN because FFT concentrates
+    // energy into narrow bins and ignores everything else
+    let freqDataBuffer = null;
+
+    function trackPitchFFT(expectedFreq) {
+      if (!analyser || !audioContext) return { frequency: -1, confidence: 0 };
+
+      const fftSize = analyser.fftSize;
+      if (!freqDataBuffer || freqDataBuffer.length !== fftSize / 2) {
+        freqDataBuffer = new Float32Array(fftSize / 2);
+      }
+      analyser.getFloatFrequencyData(freqDataBuffer);
+
+      const sampleRate = audioContext.sampleRate;
+      const binWidth = sampleRate / fftSize;
+
+      let bestFreq = -1;
+      let bestConfidence = 0;
+
+      // Check fundamental + harmonics 2-5
+      // Upper harmonics often persist longer than the fundamental on guitar
+      for (let h = 1; h <= 5; h++) {
+        const searchFreq = expectedFreq * h;
+        if (searchFreq > sampleRate / 2) break; // above Nyquist
+
+        const expectedBin = searchFreq / binWidth;
+        // Search within ±1 semitone
+        const searchRange = Math.max(3, Math.ceil(expectedBin * 0.06));
+        const minBin = Math.max(1, Math.floor(expectedBin - searchRange));
+        const maxBin = Math.min(freqDataBuffer.length - 2, Math.ceil(expectedBin + searchRange));
+
+        // Find peak in range
+        let peakBin = minBin;
+        let peakVal = freqDataBuffer[minBin];
+        for (let i = minBin + 1; i <= maxBin; i++) {
+          if (freqDataBuffer[i] > peakVal) {
+            peakVal = freqDataBuffer[i];
+            peakBin = i;
+          }
+        }
+
+        // Must be above noise floor (dB scale)
+        if (peakVal < -90) continue;
+
+        // Parabolic interpolation for sub-bin precision
+        const alpha = freqDataBuffer[peakBin - 1];
+        const beta = freqDataBuffer[peakBin];
+        const gamma = freqDataBuffer[peakBin + 1];
+        const denom = alpha - 2 * beta + gamma;
+        const p = denom !== 0 ? 0.5 * (alpha - gamma) / denom : 0;
+
+        const interpolatedBin = peakBin + p;
+        const harmonicFreq = interpolatedBin * binWidth;
+        const derivedFundamental = harmonicFreq / h;
+
+        // Confidence from peak prominence above neighbors
+        const windowSize = 5;
+        let noiseFloor = 0;
+        let count = 0;
+        for (let i = Math.max(0, peakBin - windowSize * 2); i <= Math.min(freqDataBuffer.length - 1, peakBin + windowSize * 2); i++) {
+          if (Math.abs(i - peakBin) > windowSize) {
+            noiseFloor += freqDataBuffer[i];
+            count++;
+          }
+        }
+        noiseFloor = count > 0 ? noiseFloor / count : -100;
+        const prominence = beta - noiseFloor;
+        // Weight lower harmonics slightly higher (more reliable)
+        const harmonicWeight = 1 - (h - 1) * 0.1;
+        const confidence = Math.min(1, (prominence / 15) * harmonicWeight);
+
+        if (confidence > bestConfidence) {
+          bestConfidence = confidence;
+          bestFreq = derivedFundamental;
+        }
+      }
+
+      return { frequency: bestFreq, confidence: bestConfidence };
+    }
+
     // Smooth frequency readings with aggressive filtering
     function smoothFrequency(newFreq) {
       if (newFreq === -1) {
@@ -1740,7 +1823,8 @@
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 16384; // Maximum buffer for tracking weak/decaying signals
-        analyser.smoothingTimeConstant = 0.8;
+        analyser.smoothingTimeConstant = 0.5; // Lower = more responsive FFT
+        analyser.minDecibels = -130; // Wider dynamic range for weak signals
 
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const source = audioContext.createMediaStreamSource(mediaStream);
@@ -1772,46 +1856,45 @@
           levelMeterFill.classList.toggle('hot', levelPct > 70);
           levelMeterFill.classList.toggle('clip', levelPct > 90);
 
-          // Reset reference when note changes
-          if (lockedNoteIndex !== prevLockedNote) {
-            referenceRMS = 0;
-            prevLockedNote = lockedNoteIndex;
-          }
+          let rawFreq, confidence;
 
-          let analysisBuffer = buffer;
-          let confThreshold = 0.5;
+          if (lockedNoteIndex >= 0 && smoothedFrequency > 0) {
+            // TRACKING MODE: use FFT spectral peak tracking
+            // Much more robust for decaying signals - finds peaks
+            // in the frequency spectrum near the expected note and
+            // its harmonics, even when the signal is very weak
+            const fftResult = trackPitchFFT(smoothedFrequency);
 
-          if (lockedNoteIndex >= 0 && rawRMS > 0.0003) {
-            // TRACKING MODE: apply decay compensation
-            if (referenceRMS <= 0) referenceRMS = rawRMS;
-            // Update reference if signal gets louder (re-pluck)
-            if (rawRMS > referenceRMS * 0.8) referenceRMS = rawRMS;
+            if (fftResult.confidence > 0.15) {
+              rawFreq = fftResult.frequency;
+              confidence = fftResult.confidence;
+            } else {
+              // FFT lost it too - try YIN with gain compensation as fallback
+              rawFreq = -1;
+              confidence = 0;
+            }
 
-            const gain = Math.min(MAX_GAIN, referenceRMS / rawRMS);
-            if (gain > 1.2) {
-              const boosted = new Float32Array(buffer.length);
-              for (let i = 0; i < buffer.length; i++) {
-                boosted[i] = buffer[i] * gain;
+            // Also run YIN to detect note changes (new pluck of different string)
+            // YIN is better at identifying new notes from strong signals
+            if (rawRMS > 0.02) {
+              const yinResult = yinPitchDetect(buffer, audioContext.sampleRate);
+              if (yinResult.confidence > 0.93 && yinResult.frequency > 0) {
+                const yinNoteIndex = Math.round(12 * Math.log2(yinResult.frequency / A4)) + 69;
+                if (yinNoteIndex !== lockedNoteIndex) {
+                  // Strong detection of a different note - switch
+                  rawFreq = yinResult.frequency;
+                  confidence = yinResult.confidence;
+                }
               }
-              analysisBuffer = boosted;
             }
-            confThreshold = 0.15;
-          } else if (lockedNoteIndex < 0) {
-            // ACQUISITION MODE: tighter settings
-            referenceRMS = 0;
-            confThreshold = 0.5;
+          } else {
+            // ACQUISITION MODE: use YIN to identify the note
+            const yinResult = yinPitchDetect(buffer, audioContext.sampleRate);
+            rawFreq = yinResult.frequency;
+            confidence = yinResult.confidence;
           }
 
-          const { frequency: rawFreq, confidence } = yinPitchDetect(analysisBuffer, audioContext.sampleRate);
-
-          // High bar to switch to a different note
-          if (lockedNoteIndex >= 0 && rawFreq > 0) {
-            const newNoteIndex = Math.round(12 * Math.log2(rawFreq / A4)) + 69;
-            if (newNoteIndex !== lockedNoteIndex) {
-              confThreshold = 0.93;
-            }
-          }
-
+          const confThreshold = lockedNoteIndex >= 0 ? 0.1 : 0.5;
           const frequency = confidence > confThreshold ? smoothFrequency(rawFreq) : smoothFrequency(-1);
           updateDisplay(frequency);
 
