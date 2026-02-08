@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tuner-v1';
+const CACHE_NAME = 'tuner-v2';
 const APP_ASSETS = [
   './',
   'index.html',
