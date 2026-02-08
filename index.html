@@ -894,6 +894,181 @@
       color: var(--amber);
       background: rgba(212, 168, 83, 0.08);
     }
+
+    /* Custom tuning */
+    .custom-tuning-add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 24px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--amber);
+      letter-spacing: 0.05em;
+      transition: background 0.15s ease;
+    }
+
+    .custom-tuning-add:active {
+      background: rgba(212, 168, 83, 0.1);
+    }
+
+    .custom-tuning-form {
+      display: none;
+      padding: 16px 24px;
+      border-top: 1px solid rgba(232, 228, 220, 0.06);
+      border-bottom: 1px solid rgba(232, 228, 220, 0.06);
+    }
+
+    .custom-tuning-form.open {
+      display: block;
+    }
+
+    .custom-tuning-form label {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      margin-top: 12px;
+    }
+
+    .custom-tuning-form label:first-child {
+      margin-top: 0;
+    }
+
+    .custom-tuning-name-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-deep);
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .custom-tuning-name-input:focus {
+      border-color: rgba(212, 168, 83, 0.4);
+    }
+
+    .custom-string-count {
+      display: flex;
+      gap: 6px;
+    }
+
+    .custom-string-count-btn {
+      width: 40px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--bg-deep);
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .custom-string-count-btn.active {
+      border-color: rgba(212, 168, 83, 0.4);
+      color: var(--amber);
+      background: rgba(212, 168, 83, 0.08);
+    }
+
+    .custom-string-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .custom-string-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .custom-string-row span {
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 16px;
+      text-align: center;
+    }
+
+    .custom-string-row select {
+      flex: 1;
+      padding: 8px 8px;
+      background: var(--bg-deep);
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-primary);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .custom-string-row select:focus {
+      border-color: rgba(212, 168, 83, 0.4);
+    }
+
+    .custom-tuning-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .custom-tuning-actions button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      transition: all 0.15s ease;
+    }
+
+    .custom-tuning-save {
+      background: rgba(212, 168, 83, 0.15);
+      border-color: rgba(212, 168, 83, 0.3) !important;
+      color: var(--amber);
+    }
+
+    .custom-tuning-cancel {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .delete-tuning-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .delete-tuning-btn:active {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
   </style>
 </head>
 <body>
@@ -983,6 +1158,24 @@
         <h2 class="tuning-modal-title">Select Tuning</h2>
         <button class="tuning-modal-close" id="closeTuningModal">&times;</button>
       </div>
+      <button class="custom-tuning-add" id="addCustomTuningBtn">+ Add Custom Tuning</button>
+
+      <div class="custom-tuning-form" id="customTuningForm">
+        <label>Tuning Name</label>
+        <input type="text" class="custom-tuning-name-input" id="customTuningName" placeholder="My Tuning" maxlength="30">
+
+        <label>Strings</label>
+        <div class="custom-string-count" id="customStringCount"></div>
+
+        <label>Notes</label>
+        <div class="custom-string-rows" id="customStringRows"></div>
+
+        <div class="custom-tuning-actions">
+          <button class="custom-tuning-cancel" id="customTuningCancel">Cancel</button>
+          <button class="custom-tuning-save" id="customTuningSave">Save</button>
+        </div>
+      </div>
+
       <div id="tuningList"></div>
     </div>
   </div>
@@ -1858,6 +2051,200 @@
     // Initialize metronome
     setBpm(metronomeBpm);
     setTimeSig(metronomeBeats);
+
+    // === Custom Tunings ===
+    const CUSTOM_NOTES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+    let customTunings = JSON.parse(localStorage.getItem('customTunings') || '[]');
+    let customStringCount = 6;
+
+    function noteToFreq(note, octave) {
+      const noteIdx = CUSTOM_NOTES.indexOf(note);
+      const midi = (octave + 1) * 12 + noteIdx;
+      return A4 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function renderCustomStringRows() {
+      const container = document.getElementById('customStringRows');
+      container.innerHTML = '';
+      for (let i = 0; i < customStringCount; i++) {
+        const row = document.createElement('div');
+        row.className = 'custom-string-row';
+
+        const label = document.createElement('span');
+        label.textContent = customStringCount - i;
+
+        const noteSelect = document.createElement('select');
+        noteSelect.dataset.idx = i;
+        noteSelect.className = 'custom-note-select';
+        CUSTOM_NOTES.forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n;
+          opt.textContent = n;
+          // Default to standard tuning notes
+          const defaults = ['E', 'A', 'D', 'G', 'B', 'E'];
+          if (i < defaults.length && n === defaults[i]) opt.selected = true;
+          noteSelect.appendChild(opt);
+        });
+
+        const octSelect = document.createElement('select');
+        octSelect.dataset.idx = i;
+        octSelect.className = 'custom-oct-select';
+        for (let o = 1; o <= 6; o++) {
+          const opt = document.createElement('option');
+          opt.value = o;
+          opt.textContent = o;
+          const defaultOcts = [2, 2, 3, 3, 3, 4];
+          if (i < defaultOcts.length && o === defaultOcts[i]) opt.selected = true;
+          octSelect.appendChild(opt);
+        }
+
+        row.appendChild(label);
+        row.appendChild(noteSelect);
+        row.appendChild(octSelect);
+        container.appendChild(row);
+      }
+    }
+
+    function renderCustomStringCount() {
+      const container = document.getElementById('customStringCount');
+      container.innerHTML = '';
+      [4, 5, 6, 7].forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'custom-string-count-btn' + (n === customStringCount ? ' active' : '');
+        btn.textContent = n;
+        btn.addEventListener('click', () => {
+          customStringCount = n;
+          renderCustomStringCount();
+          renderCustomStringRows();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function saveCustomTuning() {
+      const name = document.getElementById('customTuningName').value.trim();
+      if (!name) return;
+
+      const notes = [];
+      const freqs = [];
+      const noteSelects = document.querySelectorAll('.custom-note-select');
+      const octSelects = document.querySelectorAll('.custom-oct-select');
+
+      for (let i = 0; i < customStringCount; i++) {
+        const note = noteSelects[i].value;
+        const oct = parseInt(octSelects[i].value);
+        notes.push(note + oct);
+        freqs.push(Math.round(noteToFreq(note, oct) * 100) / 100);
+      }
+
+      const tuning = { name, notes, freqs, custom: true };
+
+      // Replace if same name exists
+      const existingIdx = customTunings.findIndex(t => t.name === name);
+      if (existingIdx >= 0) {
+        customTunings[existingIdx] = tuning;
+      } else {
+        customTunings.push(tuning);
+      }
+
+      localStorage.setItem('customTunings', JSON.stringify(customTunings));
+      renderTuningList();
+      closeCustomTuningForm();
+      selectTuning(name);
+    }
+
+    function deleteCustomTuning(name) {
+      customTunings = customTunings.filter(t => t.name !== name);
+      localStorage.setItem('customTunings', JSON.stringify(customTunings));
+      if (currentTuning.name === name) {
+        selectTuning('Standard');
+      }
+      renderTuningList();
+    }
+
+    function openCustomTuningForm() {
+      document.getElementById('customTuningForm').classList.add('open');
+      document.getElementById('addCustomTuningBtn').style.display = 'none';
+      document.getElementById('customTuningName').value = '';
+      renderCustomStringCount();
+      renderCustomStringRows();
+    }
+
+    function closeCustomTuningForm() {
+      document.getElementById('customTuningForm').classList.remove('open');
+      document.getElementById('addCustomTuningBtn').style.display = '';
+    }
+
+    document.getElementById('addCustomTuningBtn').addEventListener('click', openCustomTuningForm);
+    document.getElementById('customTuningSave').addEventListener('click', saveCustomTuning);
+    document.getElementById('customTuningCancel').addEventListener('click', closeCustomTuningForm);
+
+    // Override renderTuningList to include custom tunings
+    const _origRenderTuningList = renderTuningList;
+    renderTuningList = function() {
+      let html = '';
+
+      // Custom tunings first if any exist
+      if (customTunings.length > 0) {
+        html += '<div class="tuning-category"><span class="tuning-category-label">Custom</span></div>';
+        html += customTunings.map(tuning => `
+          <button class="tuning-option ${tuning.name === currentTuning.name ? 'active' : ''}" data-tuning="${tuning.name}">
+            <span class="tuning-option-name">${tuning.name}</span>
+            <span class="tuning-option-notes">${tuning.notes.map(n => n.replace(/[0-9]/g, '')).join(' ')}</span>
+          </button>
+        `).join('');
+      }
+
+      // Built-in tunings
+      html += Object.entries(TUNINGS).map(([category, tunings]) => `
+        <div class="tuning-category">
+          <span class="tuning-category-label">${category}</span>
+        </div>
+        ${tunings.map(tuning => `
+          <button class="tuning-option ${tuning.name === currentTuning.name ? 'active' : ''}" data-tuning="${tuning.name}">
+            <span class="tuning-option-name">${tuning.name}</span>
+            <span class="tuning-option-notes">${tuning.notes.map(n => n.replace(/[0-9]/g, '')).join(' ')}</span>
+          </button>
+        `).join('')}
+      `).join('');
+
+      tuningList.innerHTML = html;
+
+      // Add delete buttons to custom tunings
+      customTunings.forEach(tuning => {
+        const option = tuningList.querySelector(`[data-tuning="${tuning.name}"]`);
+        if (option) {
+          const delBtn = document.createElement('button');
+          delBtn.className = 'delete-tuning-btn';
+          delBtn.innerHTML = '&times;';
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteCustomTuning(tuning.name);
+          });
+          option.appendChild(delBtn);
+        }
+      });
+    };
+
+    // Override selectTuning to also check custom tunings
+    const _origSelectTuning = selectTuning;
+    selectTuning = function(tuningName) {
+      // Check custom tunings first
+      const customFound = customTunings.find(t => t.name === tuningName);
+      if (customFound) {
+        currentTuning = customFound;
+        currentTuningName.textContent = currentTuning.name;
+        renderStrings();
+        renderTuningList();
+        closeTuningModalFn();
+        localStorage.setItem('selectedTuning', currentTuning.name);
+        return;
+      }
+      _origSelectTuning(tuningName);
+    };
+
+    // Re-render to include custom tunings
+    renderTuningList();
   </script>
 </body>
 </html>
