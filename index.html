@@ -1217,6 +1217,340 @@
       background: rgba(239, 68, 68, 0.15);
       color: #ef4444;
     }
+
+    /* === Recorder === */
+    .recorder-container {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 400px;
+      gap: 20px;
+      padding-top: 8px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .recorder-container.active {
+      display: flex;
+    }
+
+    .recorder-status {
+      text-align: center;
+      min-height: 24px;
+    }
+
+    .recorder-status-text {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .recorder-status-text.recording {
+      color: #ef4444;
+    }
+
+    .recorder-status-text.processing {
+      color: var(--amber);
+    }
+
+    .recorder-status-text.ready {
+      color: var(--color-perfect);
+    }
+
+    @keyframes rec-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .rec-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+      animation: rec-pulse 1s ease-in-out infinite;
+    }
+
+    .recorder-timer {
+      font-family: 'Instrument Serif', serif;
+      font-size: 64px;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    .recorder-timer.recording {
+      color: #ef4444;
+      text-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+    }
+
+    .recorder-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .rec-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid rgba(239, 68, 68, 0.4);
+      background: var(--bg-surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .rec-btn:active {
+      transform: scale(0.95);
+    }
+
+    .rec-btn .rec-btn-inner {
+      width: 24px;
+      height: 24px;
+      background: #ef4444;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .rec-btn.recording .rec-btn-inner {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+
+    .rec-btn.recording {
+      border-color: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .rec-secondary-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      background: var(--bg-surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .rec-secondary-btn:active {
+      transform: scale(0.92);
+      border-color: var(--amber);
+    }
+
+    .rec-secondary-btn:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .rec-secondary-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--text-muted);
+    }
+
+    .recorder-progress {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-surface);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .recorder-progress.active {
+      display: block;
+    }
+
+    .recorder-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--amber);
+      border-radius: 2px;
+      transition: width 0.15s linear;
+    }
+
+    .tab-output {
+      width: 100%;
+      display: none;
+    }
+
+    .tab-output.active {
+      display: block;
+    }
+
+    .tab-output pre {
+      width: 100%;
+      padding: 16px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.06);
+      border-radius: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      overflow-x: auto;
+      white-space: pre;
+      -webkit-overflow-scrolling: touch;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .tab-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .tab-action-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.1);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .tab-action-btn:active {
+      transform: scale(0.96);
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .tab-action-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    .saved-tabs {
+      width: 100%;
+      display: none;
+    }
+
+    .saved-tabs.has-tabs {
+      display: block;
+    }
+
+    .saved-tabs-header {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .saved-tab-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(232, 228, 220, 0.06);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .saved-tab-item:active {
+      border-color: rgba(212, 168, 83, 0.3);
+    }
+
+    .saved-tab-name {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .saved-tab-date {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+
+    .saved-tab-delete {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .saved-tab-delete:active {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .copy-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-surface);
+      border: 1px solid rgba(212, 168, 83, 0.3);
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--amber);
+      letter-spacing: 0.05em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 200;
+    }
+
+    .copy-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(212, 168, 83, 0.2);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -1389,6 +1723,58 @@
     </div>
   </div>
 
+  <!-- Recorder View -->
+  <div class="recorder-container" id="recorderContainer">
+    <div class="recorder-status">
+      <span class="recorder-status-text" id="recorderStatus">Ready to record</span>
+    </div>
+
+    <div class="recorder-timer" id="recorderTimer">0:00</div>
+
+    <div class="recorder-controls">
+      <button class="rec-secondary-btn" id="recClearBtn" disabled title="Clear">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </svg>
+      </button>
+      <button class="rec-btn" id="recBtn" title="Record">
+        <div class="rec-btn-inner"></div>
+      </button>
+      <button class="rec-secondary-btn" id="recClearBtn2" style="visibility:hidden">
+        <svg viewBox="0 0 24 24"><path d="M0 0"/></svg>
+      </button>
+    </div>
+
+    <div class="recorder-progress" id="recorderProgress">
+      <div class="recorder-progress-fill" id="recorderProgressFill"></div>
+    </div>
+
+    <div class="tab-output" id="tabOutput">
+      <pre id="tabPre"></pre>
+      <div class="tab-actions">
+        <button class="tab-action-btn" id="copyTabBtn">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+          </svg>
+          Copy
+        </button>
+        <button class="tab-action-btn" id="saveTabBtn">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+          </svg>
+          Save
+        </button>
+      </div>
+    </div>
+
+    <div class="saved-tabs" id="savedTabsList">
+      <div class="saved-tabs-header">Saved Tabs</div>
+      <div id="savedTabsItems"></div>
+    </div>
+  </div>
+
+  <div class="copy-toast" id="copyToast">Copied to clipboard</div>
+
   <!-- Tab Bar -->
   <nav class="tab-bar">
     <button class="tab-bar-btn active" id="tabTuner" data-view="tuner">
@@ -1402,6 +1788,12 @@
         <path d="M12 2L6 22h12L12 2zm0 5.5l3.5 12.5h-7L12 7.5zM11 14h2v4h-2v-4z"/>
       </svg>
       <span>Metronome</span>
+    </button>
+    <button class="tab-bar-btn" id="tabRecorder" data-view="recorder">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 17h2v5H3v-5zm4-5h2v10H7V12zm4-4h2v14h-2V8zm4-3h2v17h-2V5zm4-3h2v20h-2V2z"/>
+      </svg>
+      <span>Tab</span>
     </button>
   </nav>
 
@@ -2296,10 +2688,12 @@
       currentView = view;
       document.getElementById('tunerViewWrapper').classList.toggle('hidden', view !== 'tuner');
       document.getElementById('metronomeContainer').classList.toggle('active', view === 'metronome');
+      document.getElementById('recorderContainer').classList.toggle('active', view === 'recorder');
       document.getElementById('startContainer').style.display = view === 'tuner' ? '' : 'none';
       document.querySelectorAll('.tab-bar-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
       });
+      if (view === 'recorder' && !bpModuleLoaded) loadBasicPitch();
     }
 
     document.querySelectorAll('.tab-bar-btn').forEach(btn => {
@@ -2421,6 +2815,10 @@
 
     document.getElementById('tapTempo').addEventListener('click', () => {
       const now = Date.now();
+      // Reset if gap is too long
+      if (tapTimes.length >= 1 && now - tapTimes[tapTimes.length - 1] > 3000) {
+        tapTimes = [];
+      }
       tapTimes.push(now);
       // Keep last 5 taps
       if (tapTimes.length > 5) tapTimes.shift();
@@ -2431,10 +2829,6 @@
         }
         const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
         setBpm(Math.round(60000 / avgInterval));
-      }
-      // Reset if gap is too long
-      if (tapTimes.length >= 2 && now - tapTimes[tapTimes.length - 2] > 3000) {
-        tapTimes = [now];
       }
     });
 
@@ -2640,6 +3034,664 @@
 
     // Re-render to include custom tunings
     renderTuningList();
+
+    // === Tab Recorder ===
+    let isRecording = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordingStartTime = 0;
+    let recordingTimer = null;
+    let basicPitchModel = null;
+    let bpModuleLoaded = false;
+    let bpModule = null;
+    let recordedEvents = [];
+
+    const BP_MODEL_URL = 'model/model.json';
+    const MIDI_TO_FREQ = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+
+    // String tuning in MIDI note numbers for mapping
+    function getTuningMidi() {
+      return currentTuning.freqs.map(f => Math.round(12 * Math.log2(f / 440) + 69));
+    }
+
+    function showRecorderStatus(text, className) {
+      const el = document.getElementById('recorderStatus');
+      el.textContent = text;
+      el.className = 'recorder-status-text';
+      if (className) el.classList.add(className);
+      // Add dot for recording
+      if (className === 'recording') {
+        el.innerHTML = '<span class="rec-dot"></span>' + text;
+      }
+      // Add spinner for processing
+      if (className === 'processing') {
+        el.innerHTML = '<span class="spinner"></span>' + text;
+      }
+    }
+
+    async function loadBasicPitch() {
+      if (bpModuleLoaded) return;
+      showRecorderStatus('Loading ML model...', 'processing');
+      try {
+        const tf = await import('https://esm.sh/@tensorflow/tfjs@3');
+        bpModule = await import('https://esm.sh/@spotify/basic-pitch');
+        basicPitchModel = new bpModule.BasicPitch(BP_MODEL_URL);
+        bpModuleLoaded = true;
+        showRecorderStatus('Ready to record');
+      } catch (err) {
+        console.error('Failed to load BasicPitch:', err);
+        showRecorderStatus('Model load failed — check connection');
+      }
+    }
+
+    function updateRecorderTimer() {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      const timerEl = document.getElementById('recorderTimer');
+      timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    async function startRecording() {
+      if (isRecording) return;
+
+      // Ensure model is loaded
+      if (!bpModuleLoaded) {
+        await loadBasicPitch();
+        if (!bpModuleLoaded) return;
+      }
+
+      // Get microphone stream — reuse if tuner already has one
+      let recStream = mediaStream;
+      if (!recStream) {
+        try {
+          recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+          console.error('Microphone access denied:', err);
+          showRecorderStatus('Microphone access required');
+          return;
+        }
+      }
+
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(recStream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm'
+      });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => processRecording();
+
+      mediaRecorder.start(250); // collect in 250ms chunks
+      isRecording = true;
+      recordingStartTime = Date.now();
+      recordingTimer = setInterval(updateRecorderTimer, 200);
+
+      // Update UI
+      document.getElementById('recBtn').classList.add('recording');
+      document.getElementById('recorderTimer').classList.add('recording');
+      document.getElementById('recClearBtn').disabled = true;
+      showRecorderStatus('Recording', 'recording');
+    }
+
+    function stopRecording() {
+      if (!isRecording || !mediaRecorder) return;
+      mediaRecorder.stop();
+      isRecording = false;
+      clearInterval(recordingTimer);
+
+      document.getElementById('recBtn').classList.remove('recording');
+      document.getElementById('recorderTimer').classList.remove('recording');
+      showRecorderStatus('Processing audio...', 'processing');
+    }
+
+    function updateProgressBar(pct) {
+      const bar = document.getElementById('recorderProgress');
+      const fill = document.getElementById('recorderProgressFill');
+      bar.classList.add('active');
+      fill.style.width = (pct * 100) + '%';
+    }
+
+    async function processRecording() {
+      if (recordedChunks.length === 0) {
+        showRecorderStatus('No audio recorded');
+        return;
+      }
+
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const arrayBuf = await blob.arrayBuffer();
+
+      // Ensure we have an audio context
+      const ctx = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      if (!audioContext) audioContext = ctx;
+
+      let audioBuf;
+      try {
+        audioBuf = await ctx.decodeAudioData(arrayBuf);
+      } catch (err) {
+        console.error('Failed to decode audio:', err);
+        showRecorderStatus('Failed to decode audio');
+        document.getElementById('recorderProgress').classList.remove('active');
+        return;
+      }
+
+      // Resample to 22050 Hz mono
+      const targetSR = 22050;
+      const numSamples = Math.ceil(audioBuf.duration * targetSR);
+      const offCtx = new OfflineAudioContext(1, numSamples, targetSR);
+      const src = offCtx.createBufferSource();
+      src.buffer = audioBuf;
+      src.connect(offCtx.destination);
+      src.start();
+      const resampled = await offCtx.startRendering();
+
+      // Run BasicPitch
+      let frames, onsets, contours;
+      try {
+        await basicPitchModel.evaluateModel(
+          resampled,
+          (f, o, c) => { frames = f; onsets = o; contours = c; },
+          (pct) => updateProgressBar(pct)
+        );
+      } catch (err) {
+        console.error('BasicPitch inference failed:', err);
+        showRecorderStatus('Processing failed');
+        document.getElementById('recorderProgress').classList.remove('active');
+        return;
+      }
+
+      // Convert to note events
+      // onsetThresh=0.25, frameThresh=0.15, minNoteLen=3 — tuned for guitar sensitivity
+      // maxFreq=1400Hz (fret 24 high E), minFreq=70Hz (below low E=82Hz)
+      const noteEvents = bpModule.noteFramesToTime(
+        bpModule.addPitchBendsToNoteEvents(
+          contours,
+          bpModule.outputToNotesPoly(frames, onsets, 0.25, 0.15, 3, true, 1400, 70)
+        )
+      );
+
+      // Filter to guitar range (MIDI 38~D2 to MIDI 90~F#6)
+      const guitarNotes = noteEvents.filter(n => n.pitchMidi >= 38 && n.pitchMidi <= 90);
+
+      // Debug: log raw BasicPitch output
+      console.log('[tab] Raw BasicPitch notes:', guitarNotes.map(n => ({
+        midi: n.pitchMidi,
+        note: NOTES[n.pitchMidi % 12] + Math.floor(n.pitchMidi / 12 - 1),
+        start: n.startTimeSeconds.toFixed(3),
+        dur: n.durationSeconds.toFixed(3),
+        amp: n.amplitude?.toFixed(3)
+      })));
+
+      processNoteEvents(guitarNotes);
+      renderTab();
+
+      document.getElementById('recorderProgress').classList.remove('active');
+      document.getElementById('recorderProgressFill').style.width = '0%';
+      document.getElementById('recClearBtn').disabled = false;
+
+      if (recordedEvents.length > 0) {
+        showRecorderStatus(`${recordedEvents.length} events detected`, 'ready');
+      } else {
+        showRecorderStatus('No notes detected — try playing louder');
+      }
+    }
+
+    // Hand position tracker — smoothly follows where you're playing
+    let handPosition = 0; // 0 = open/nut area
+
+    // Common open chord shapes: [string0(low E), string1(A), ..., string5(high e)]
+    // null = not played, 0 = open, N = fret
+    const CHORD_SHAPES = [
+      { name: 'C',  shape: [null, 3, 2, 0, 1, 0] },
+      { name: 'G',  shape: [3, 2, 0, 0, 0, 3] },
+      { name: 'G2', shape: [3, 2, 0, 0, 3, 3] },
+      { name: 'D',  shape: [null, null, 0, 2, 3, 2] },
+      { name: 'E',  shape: [0, 2, 2, 1, 0, 0] },
+      { name: 'Em', shape: [0, 2, 2, 0, 0, 0] },
+      { name: 'A',  shape: [null, 0, 2, 2, 2, 0] },
+      { name: 'Am', shape: [null, 0, 2, 2, 1, 0] },
+      { name: 'Dm', shape: [null, null, 0, 2, 3, 1] },
+      { name: 'F',  shape: [null, null, 3, 2, 1, 1] },
+      { name: 'B7', shape: [null, 2, 1, 2, 0, 2] },
+      { name: 'G7', shape: [3, 2, 0, 0, 0, 1] },
+      { name: 'C7', shape: [null, 3, 2, 3, 1, 0] },
+      { name: 'D7', shape: [null, null, 0, 2, 1, 2] },
+      { name: 'A7', shape: [null, 0, 2, 0, 2, 0] },
+      { name: 'E7', shape: [0, 2, 0, 1, 0, 0] },
+    ];
+
+    // Try to match a set of MIDI notes against known chord shapes.
+    // When a match is found, returns the FULL chord shape (chord completion) —
+    // if BasicPitch only detected 3 of 5 notes in a C chord, we output all 5.
+    function matchChordShape(midiNotes) {
+      const tuningMidi = getTuningMidi();
+      let bestMatch = null;
+      let bestName = '';
+      let bestScore = -1;
+      let bestUnmatched = Infinity; // how many input notes didn't fit
+
+      function tryShape(shapeAssignment, name) {
+        // Count how many input notes match this shape
+        let matched = 0;
+        let unmatched = 0;
+        const usedAssignments = new Set();
+        for (const inputMidi of midiNotes) {
+          const matchIdx = shapeAssignment.findIndex((a, i) => a.midi === inputMidi && !usedAssignments.has(i));
+          if (matchIdx >= 0) {
+            matched++;
+            usedAssignments.add(matchIdx);
+          } else {
+            unmatched++;
+          }
+        }
+
+        // Need: at least 2 notes matched, and no more than 1 spurious note
+        if (matched < 2 || unmatched > 1) return;
+
+        // Score: matched notes, penalize unmatched
+        const score = matched * 10 - unmatched * 5;
+        if (score > bestScore || (score === bestScore && unmatched < bestUnmatched)) {
+          bestScore = score;
+          bestUnmatched = unmatched;
+          bestName = name;
+          // Return the FULL chord shape — this is chord completion
+          bestMatch = shapeAssignment.map(a => ({...a}));
+        }
+      }
+
+      // Try all open chord shapes
+      for (const chord of CHORD_SHAPES) {
+        const shapeAssignment = [];
+        for (let s = 0; s < tuningMidi.length; s++) {
+          if (chord.shape[s] !== null) {
+            shapeAssignment.push({
+              string: s,
+              fret: chord.shape[s],
+              midi: tuningMidi[s] + chord.shape[s]
+            });
+          }
+        }
+        tryShape(shapeAssignment, chord.name);
+      }
+
+      // Also try barre chord shapes at every fret position
+      const barreShapes = [
+        { name: 'maj(E)', base: [0, 2, 2, 1, 0, 0] },
+        { name: 'min(E)', base: [0, 2, 2, 0, 0, 0] },
+        { name: 'maj(A)', base: [null, 0, 2, 2, 2, 0] },
+        { name: 'min(A)', base: [null, 0, 2, 2, 1, 0] },
+      ];
+
+      for (const { name, base } of barreShapes) {
+        for (let barre = 1; barre <= 12; barre++) {
+          const shapeAssignment = [];
+          for (let s = 0; s < tuningMidi.length; s++) {
+            if (base[s] !== null) {
+              const fret = base[s] + barre;
+              if (fret > 24) continue;
+              shapeAssignment.push({ string: s, fret, midi: tuningMidi[s] + fret });
+            }
+          }
+          tryShape(shapeAssignment, `${name}@${barre}`);
+        }
+      }
+
+      if (bestMatch) {
+        console.log(`[tab] Chord matched: ${bestName} (${bestScore} score, ${bestUnmatched} unmatched)`);
+      }
+      return bestMatch;
+    }
+
+    // Score a complete string/fret assignment for a chord
+    function scoreAssignment(assignment) {
+      if (assignment.length === 0) return -Infinity;
+      let score = 0;
+
+      const frettedNotes = assignment.filter(a => a.fret > 0);
+      const openNotes = assignment.filter(a => a.fret === 0);
+
+      // Bonus for open strings (very common on guitar)
+      score += openNotes.length * 4;
+
+      // Prefer lower frets
+      for (const a of assignment) {
+        score -= a.fret * 0.4;
+      }
+
+      // Fret span penalty — tighter grouping is better
+      if (frettedNotes.length >= 2) {
+        const frets = frettedNotes.map(a => a.fret);
+        const span = Math.max(...frets) - Math.min(...frets);
+        score -= span * 3;
+        // Harsh penalty for physically impossible spans
+        if (span > 4) score -= (span - 4) * 10;
+      }
+
+      // Position continuity — prefer staying near current hand position
+      if (handPosition > 0 && frettedNotes.length > 0) {
+        const avgFret = frettedNotes.reduce((s, a) => s + a.fret, 0) / frettedNotes.length;
+        score -= Math.abs(avgFret - handPosition) * 0.8;
+      }
+
+      // Natural string ordering — lower pitches on lower-numbered strings
+      let orderBonus = 0;
+      for (let i = 0; i < assignment.length; i++) {
+        for (let j = i + 1; j < assignment.length; j++) {
+          if (assignment[i].midi < assignment[j].midi && assignment[i].string < assignment[j].string) {
+            orderBonus += 2;
+          } else if (assignment[i].midi > assignment[j].midi && assignment[i].string > assignment[j].string) {
+            orderBonus += 2;
+          } else if (assignment[i].midi !== assignment[j].midi && assignment[i].string !== assignment[j].string) {
+            orderBonus -= 3; // Crossed strings = unnatural
+          }
+        }
+      }
+      score += orderBonus;
+
+      return score;
+    }
+
+    // Map a group of simultaneous MIDI notes to string/fret assignments
+    // Uses chord shape matching first, then backtracking search with fret span pruning
+    function mapChordToStrings(midiNotes) {
+      const tuningMidi = getTuningMidi();
+      const numStrings = tuningMidi.length;
+
+      // First, try matching a known chord shape — returns full chord (completion)
+      const chordMatch = matchChordShape(midiNotes);
+      if (chordMatch) {
+        // Chord shape matched — use it (includes completed notes)
+        return chordMatch;
+      }
+
+      // No chord match — fall back to backtracking search
+      const options = midiNotes.map(midi => {
+        const opts = [];
+        for (let s = 0; s < numStrings; s++) {
+          const fret = midi - tuningMidi[s];
+          if (fret >= 0 && fret <= 24) {
+            opts.push({ string: s, fret, midi });
+          }
+        }
+        return opts;
+      });
+
+      let bestAssignment = null;
+      let bestScore = -Infinity;
+
+      function search(noteIdx, assignment, usedStrings) {
+        if (noteIdx === options.length) {
+          const score = scoreAssignment(assignment);
+          if (score > bestScore) {
+            bestScore = score;
+            bestAssignment = assignment.map(a => ({...a}));
+          }
+          return;
+        }
+
+        if (options[noteIdx].length === 0) {
+          search(noteIdx + 1, assignment, usedStrings);
+          return;
+        }
+
+        for (const opt of options[noteIdx]) {
+          if (usedStrings.has(opt.string)) continue;
+
+          // Prune: check fret span constraint
+          const frettedFrets = assignment
+            .filter(a => a.fret > 0)
+            .map(a => a.fret);
+          if (opt.fret > 0) frettedFrets.push(opt.fret);
+
+          if (frettedFrets.length >= 2) {
+            const span = Math.max(...frettedFrets) - Math.min(...frettedFrets);
+            if (span > 5) continue;
+          }
+
+          usedStrings.add(opt.string);
+          assignment.push(opt);
+          search(noteIdx + 1, assignment, usedStrings);
+          assignment.pop();
+          usedStrings.delete(opt.string);
+        }
+      }
+
+      search(0, [], new Set());
+      return bestAssignment || [];
+    }
+
+    function processNoteEvents(timedNotes) {
+      if (timedNotes.length === 0) {
+        recordedEvents = [];
+        return;
+      }
+
+      // Sort by start time
+      const sorted = [...timedNotes].sort((a, b) => a.startTimeSeconds - b.startTimeSeconds);
+
+      // Group notes into chords — strum window of 80ms
+      // (strums take ~50-80ms from lowest to highest string)
+      const groups = [];
+      let currentGroup = [sorted[0]];
+
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].startTimeSeconds - currentGroup[0].startTimeSeconds < 0.08) {
+          currentGroup.push(sorted[i]);
+        } else {
+          groups.push(currentGroup);
+          currentGroup = [sorted[i]];
+        }
+      }
+      groups.push(currentGroup);
+
+      // Reset hand position for each new recording
+      handPosition = 0;
+
+      // Map each group using chord-aware assignment
+      recordedEvents = groups.map(group => {
+        const time = group[0].startTimeSeconds;
+        const duration = Math.max(...group.map(n => n.durationSeconds));
+        const midiNotes = [...new Set(group.map(n => n.pitchMidi))].sort((a, b) => a - b);
+
+        const assignment = mapChordToStrings(midiNotes);
+
+        // Update hand position based on what was played
+        const fretted = assignment.filter(a => a.fret > 0);
+        if (fretted.length > 0) {
+          const avgFret = fretted.reduce((s, a) => s + a.fret, 0) / fretted.length;
+          handPosition = handPosition === 0 ? avgFret : handPosition * 0.6 + avgFret * 0.4;
+        }
+
+        const notes = assignment.map(a => ({
+          string: a.string,
+          fret: a.fret,
+          midi: a.midi
+        }));
+
+        return { time, duration, notes };
+      }).filter(e => e.notes.length > 0);
+    }
+
+    function renderTab() {
+      const numStrings = currentTuning.notes.length;
+      const labels = currentTuning.notes.map(n => n.replace(/[0-9]/g, ''));
+
+      if (recordedEvents.length === 0) {
+        document.getElementById('tabOutput').classList.remove('active');
+        return;
+      }
+
+      // Build tab lines — strings go from high (index numStrings-1) to low (index 0)
+      // Display order: high string on top
+      const maxLineWidth = 80;
+      const lines = [];
+
+      // Build string label column (right-padded to 3 chars)
+      const labelWidth = 3;
+
+      // Calculate columns: each event is a column, spacing proportional to time gaps
+      const MIN_GAP = 1;
+      const MAX_GAP = 6;
+
+      // Build columns
+      const columns = [];
+      for (let i = 0; i < recordedEvents.length; i++) {
+        const event = recordedEvents[i];
+
+        // Calculate gap before this event
+        let gap = MIN_GAP;
+        if (i > 0) {
+          const dt = event.time - recordedEvents[i - 1].time;
+          gap = Math.max(MIN_GAP, Math.min(MAX_GAP, Math.round(dt * 4)));
+        }
+
+        // Determine column width (multi-digit frets need more space)
+        const maxFretDigits = Math.max(1, ...event.notes.map(n => String(n.fret).length));
+
+        columns.push({ event, gap, width: maxFretDigits });
+      }
+
+      // Render lines for each string (high to low display order)
+      for (let displayRow = 0; displayRow < numStrings; displayRow++) {
+        const stringIdx = numStrings - 1 - displayRow;
+        let line = (labels[stringIdx] + '|').padStart(labelWidth + 1);
+
+        for (const col of columns) {
+          // Add dashes for gap
+          line += '-'.repeat(col.gap);
+
+          // Find note on this string
+          const noteOnString = col.event.notes.find(n => n.string === stringIdx);
+          if (noteOnString) {
+            const fretStr = String(noteOnString.fret);
+            line += fretStr;
+            // Pad if other columns in this chord are wider
+            line += '-'.repeat(Math.max(0, col.width - fretStr.length));
+          } else {
+            line += '-'.repeat(col.width);
+          }
+        }
+
+        line += '-|';
+        lines.push(line);
+      }
+
+      const tabText = lines.join('\n');
+      document.getElementById('tabPre').textContent = tabText;
+      document.getElementById('tabOutput').classList.add('active');
+    }
+
+    function clearRecording() {
+      recordedEvents = [];
+      recordedChunks = [];
+      document.getElementById('recorderTimer').textContent = '0:00';
+      document.getElementById('tabOutput').classList.remove('active');
+      document.getElementById('recClearBtn').disabled = true;
+      showRecorderStatus('Ready to record');
+    }
+
+    function copyTabToClipboard() {
+      const text = document.getElementById('tabPre').textContent;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('copyToast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 1500);
+      });
+    }
+
+    function saveTab() {
+      const text = document.getElementById('tabPre').textContent;
+      if (!text) return;
+
+      const tabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
+      const name = `Tab ${tabs.length + 1}`;
+      tabs.push({
+        name,
+        tab: text,
+        tuning: currentTuning.name,
+        date: new Date().toISOString()
+      });
+      localStorage.setItem('savedTabs', JSON.stringify(tabs));
+      renderSavedTabs();
+      showRecorderStatus('Tab saved', 'ready');
+    }
+
+    function loadSavedTab(index) {
+      const tabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
+      if (index < 0 || index >= tabs.length) return;
+      document.getElementById('tabPre').textContent = tabs[index].tab;
+      document.getElementById('tabOutput').classList.add('active');
+      showRecorderStatus(`Loaded: ${tabs[index].name}`);
+    }
+
+    function deleteSavedTab(index) {
+      const tabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
+      tabs.splice(index, 1);
+      localStorage.setItem('savedTabs', JSON.stringify(tabs));
+      renderSavedTabs();
+    }
+
+    function renderSavedTabs() {
+      const tabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
+      const container = document.getElementById('savedTabsList');
+      const items = document.getElementById('savedTabsItems');
+      container.classList.toggle('has-tabs', tabs.length > 0);
+
+      items.innerHTML = tabs.map((t, i) => {
+        const d = new Date(t.date);
+        const dateStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+        return `
+          <div class="saved-tab-item" data-idx="${i}">
+            <div>
+              <span class="saved-tab-name">${t.name}</span>
+              <span class="saved-tab-date">${t.tuning} &middot; ${dateStr}</span>
+            </div>
+            <button class="saved-tab-delete" data-delete="${i}">&times;</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Recorder event listeners
+    document.getElementById('recBtn').addEventListener('click', () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+
+    document.getElementById('recClearBtn').addEventListener('click', clearRecording);
+    document.getElementById('copyTabBtn').addEventListener('click', copyTabToClipboard);
+    document.getElementById('saveTabBtn').addEventListener('click', saveTab);
+
+    document.getElementById('savedTabsItems').addEventListener('click', (e) => {
+      const delBtn = e.target.closest('[data-delete]');
+      if (delBtn) {
+        e.stopPropagation();
+        deleteSavedTab(parseInt(delBtn.dataset.delete));
+        return;
+      }
+      const item = e.target.closest('.saved-tab-item');
+      if (item) {
+        loadSavedTab(parseInt(item.dataset.idx));
+      }
+    });
+
+    // Stop recording if tuning changes
+    const _origSelectTuning2 = selectTuning;
+    selectTuning = function(tuningName) {
+      if (isRecording) stopRecording();
+      _origSelectTuning2(tuningName);
+    };
+
+    // Initialize saved tabs
+    renderSavedTabs();
   </script>
 <script>
   if ('serviceWorker' in navigator) {

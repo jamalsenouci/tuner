@@ -1,9 +1,11 @@
-const CACHE_NAME = 'tuner-v2';
+const CACHE_NAME = 'tuner-v3';
 const APP_ASSETS = [
   './',
   'index.html',
   'manifest.json',
-  'icon.svg'
+  'icon.svg',
+  'model/model.json',
+  'model/group1-shard1of1.bin'
 ];
 
 self.addEventListener('install', (event) => {
