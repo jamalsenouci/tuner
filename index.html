@@ -2421,6 +2421,10 @@
 
     document.getElementById('tapTempo').addEventListener('click', () => {
       const now = Date.now();
+      // Reset if gap is too long
+      if (tapTimes.length >= 1 && now - tapTimes[tapTimes.length - 1] > 3000) {
+        tapTimes = [];
+      }
       tapTimes.push(now);
       // Keep last 5 taps
       if (tapTimes.length > 5) tapTimes.shift();
@@ -2431,10 +2435,6 @@
         }
         const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
         setBpm(Math.round(60000 / avgInterval));
-      }
-      // Reset if gap is too long
-      if (tapTimes.length >= 2 && now - tapTimes[tapTimes.length - 2] > 3000) {
-        tapTimes = [now];
       }
     });
 
